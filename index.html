@@ -200,7 +200,7 @@ textarea { height: auto; padding: 8px 10px; }
         ⬆ Import JSON <input type="file" accept=".json" onchange="importData(event)" style="display:none;"/>
       </label>
     </div>
-    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;">Export saves all your data as a JSON file. Import restores it — use this to move data between devices or back it up.</div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;">Your data is not saved automatically. Use Export JSON to save your data, and Import JSON to load it back next time you open the app.</div>
   </div>
 </div>
 
@@ -312,13 +312,10 @@ const CH={};
 let data=[];
 
 function load(){
-  try{
-    const saved=localStorage.getItem(SK);
-    data=saved?JSON.parse(saved):[];
-  }catch(e){data=[];}
+  data=[];
   renderAll();
 }
-function persist(){try{localStorage.setItem(SK,JSON.stringify(data));}catch(e){}}
+function persist(){} // data is not auto-saved; use Export JSON to save your data
 
 function st(key,val){
   const m=ALL[key];if(!m)return 'ok';
