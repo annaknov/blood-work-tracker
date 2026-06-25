@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Blood Work Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #ebebeb;
+  --color-border: #e0e0e0;
+  --color-border-secondary: #d0d0d0;
+  --color-text: #111111;
+  --color-text-secondary: #555555;
+  --color-text-tertiary: #888888;
+  --color-success-bg: #edfaf0;
+  --color-success-text: #1a7a3a;
+  --color-danger-bg: #fdeaea;
+  --color-danger-text: #c0392b;
+  --color-danger-border: #f5b7b1;
+  --color-warning-bg: #fef9e7;
+  --color-warning-text: #b7770d;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1a1a1a;
+    --color-bg-secondary: #242424;
+    --color-bg-tertiary: #2e2e2e;
+    --color-border: #333333;
+    --color-border-secondary: #444444;
+    --color-text: #f0f0f0;
+    --color-text-secondary: #aaaaaa;
+    --color-text-tertiary: #777777;
+    --color-success-bg: #0d2e18;
+    --color-success-text: #4caf72;
+    --color-danger-bg: #2e0d0d;
+    --color-danger-text: #e57373;
+    --color-danger-border: #6b2020;
+    --color-warning-bg: #2e1f00;
+    --color-warning-text: #ffb74d;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--color-bg); color: var(--color-text); padding: 24px; max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 20px; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 1px solid var(--color-border); padding-bottom: 10px; }
+.tab { padding: 7px 15px; border-radius: var(--radius-sm); border: 1px solid transparent; font-size: 13px; cursor: pointer; color: var(--color-text-secondary); background: transparent; transition: all 0.15s; }
+.tab:hover { background: var(--color-bg-secondary); }
+.tab.active { background: var(--color-bg-secondary); border-color: var(--color-border-secondary); color: var(--color-text); font-weight: 500; }
+.panel { display: none; }
+.panel.active { display: block; }
+.summary-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+.stat-card { background: var(--color-bg-secondary); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--color-border); }
+.stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-val { font-size: 22px; font-weight: 600; }
+.stat-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+.flag-box { background: var(--color-danger-bg); border: 1px solid var(--color-danger-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 18px; }
+.flag-title { font-weight: 600; color: var(--color-danger-text); margin-bottom: 8px; font-size: 13px; }
+.flag-chip { display: inline-block; margin: 2px 6px 2px 0; padding: 3px 10px; border-radius: 4px; background: var(--color-bg); font-size: 12px; }
+.cat-section { margin-bottom: 30px; }
+.cat-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); padding: 10px 0 12px; border-bottom: 1px solid var(--color-border); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+.cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.marker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)); gap: 14px; }
+.card { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 15px 16px; }
+.card.flag-high { border-color: #e57373; border-left: 3px solid #e53935; }
+.card.flag-low { border-color: #ffb74d; border-left: 3px solid #fb8c00; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+.card-name { font-size: 13px; font-weight: 600; color: var(--color-text); }
+.card-unit { font-size: 11px; color: var(--color-text-tertiary); }
+.card-date { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 2px; }
+.card-range { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 9px; }
+.val-row { display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px; }
+.val-num { font-size: 26px; font-weight: 600; }
+.badge { font-size: 11px; padding: 2px 9px; border-radius: 100px; font-weight: 600; }
+.badge-ok { background: var(--color-success-bg); color: var(--color-success-text); }
+.badge-hi { background: var(--color-danger-bg); color: var(--color-danger-text); }
+.badge-lo { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.range-wrap { margin: 6px 0 4px; }
+.range-track { position: relative; height: 7px; background: var(--color-bg-secondary); border-radius: 4px; margin-bottom: 4px; overflow: visible; }
+.range-fill { position: absolute; height: 100%; background: #1D9E7444; border-radius: 4px; }
+.range-pin { position: absolute; top: -4px; width: 2px; height: 15px; border-radius: 2px; transform: translateX(-50%); }
+.range-lbls { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-tertiary); }
+.chart-wrap { position: relative; height: 100px; margin-top: 10px; }
+.no-trend { font-size: 11px; color: var(--color-text-tertiary); margin-top: 8px; }
+.delta { font-size: 11px; margin-top: 4px; }
+.add-form { background: var(--color-bg-secondary); border-radius: var(--radius); border: 1px solid var(--color-border); padding: 18px; margin-bottom: 22px; }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+.field-item { display: flex; flex-direction: column; gap: 3px; }
+.field-label { font-size: 11px; color: var(--color-text-secondary); font-weight: 500; }
+.field-sub { font-size: 10px; color: var(--color-text-tertiary); }
+input[type=number], input[type=date], input[type=text], select, textarea {
+  height: 35px; border: 1px solid var(--color-border-secondary); border-radius: var(--radius-sm);
+  padding: 0 10px; font-size: 13px; background: var(--color-bg); color: var(--color-text); width: 100%;
+}
+textarea { height: auto; padding: 8px 10px; }
+.btn { height: 35px; padding: 0 18px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; font-weight: 500; }
+.btn-p { background: #2563eb; border: none; color: #ffffff; }
+.btn-p:hover { background: #1d4ed8; }
+.btn-s { background: var(--color-bg-secondary); border: 1px solid var(--color-border-secondary); color: var(--color-text); }
+.btn-s:hover { background: var(--color-bg-tertiary); }
+.history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.history-table th { text-align: left; padding: 8px 9px; border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary); font-weight: 600; font-size: 11px; white-space: nowrap; background: var(--color-bg-secondary); }
+.history-table td { padding: 7px 9px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.history-table tr:hover td { background: var(--color-bg-secondary); }
+.del-btn { font-size: 12px; color: var(--color-text-tertiary); cursor: pointer; background: none; border: none; padding: 2px 6px; border-radius: 4px; }
+.del-btn:hover { color: var(--color-danger-text); background: var(--color-danger-bg); }
+.no-data { text-align: center; padding: 40px; color: var(--color-text-tertiary); font-size: 14px; }
+.paste-area { border: 2px dashed var(--color-border-secondary); border-radius: var(--radius); padding: 18px; }
+@media (max-width: 600px) {
+  body { padding: 12px; }
+  .summary-bar { grid-template-columns: repeat(2, 1fr); }
+  .marker-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:10px;">
+  <div>
+    <h1>Blood Work Tracker</h1>
+    <div class="subtitle" id="subtitle">Loading…</div>
+  </div>
+  <button class="btn btn-p" onclick="switchTab('add')">+ Add results</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview')">Overview</button>
+  <button class="tab" onclick="switchTab('cbc')">CBC</button>
+  <button class="tab" onclick="switchTab('metabolic')">Metabolic</button>
+  <button class="tab" onclick="switchTab('lipids')">Lipids</button>
+  <button class="tab" onclick="switchTab('hormones')">Hormones</button>
+  <button class="tab" onclick="switchTab('thyroid')">Thyroid</button>
+  <button class="tab" onclick="switchTab('vitamins')">Vitamins & minerals</button>
+  <button class="tab" onclick="switchTab('history')">History</button>
+  <button class="tab" onclick="switchTab('add')">+ Add</button>
+</div>
+
+<div id="panel-overview" class="panel active"><div id="ov"></div></div>
+<div id="panel-cbc" class="panel"><div id="sec-cbc"></div></div>
+<div id="panel-metabolic" class="panel"><div id="sec-metabolic"></div></div>
+<div id="panel-lipids" class="panel"><div id="sec-lipids"></div></div>
+<div id="panel-hormones" class="panel"><div id="sec-hormones"></div></div>
+<div id="panel-thyroid" class="panel"><div id="sec-thyroid"></div></div>
+<div id="panel-vitamins" class="panel"><div id="sec-vitamins"></div></div>
+<div id="panel-history" class="panel"><div id="hc"></div></div>
+
+<div id="panel-add" class="panel">
+  <div class="add-form">
+    <div style="font-size:15px;font-weight:600;margin-bottom:14px;">Add lab results</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div class="field-label">Test date</div>
+        <input type="date" id="entry-date" style="width:160px;"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div class="field-label">Lab / source</div>
+        <input type="text" id="entry-lab" placeholder="e.g. Quest, Labcorp" style="width:190px;"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div class="field-label">Panel</div>
+        <select id="panel-sel" onchange="showFields(this.value)" style="width:200px;">
+          <option value="">— choose a panel —</option>
+          <option value="cbc">CBC</option>
+          <option value="metabolic">Metabolic</option>
+          <option value="lipids">Lipids</option>
+          <option value="hormones">Hormones</option>
+          <option value="thyroid">Thyroid</option>
+          <option value="vitamins">Vitamins & minerals</option>
+        </select>
+      </div>
+    </div>
+    <div id="fields-wrap"></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
+      <button class="btn btn-p" onclick="saveEntry()">Save entry</button>
+      <button class="btn btn-s" onclick="clearForm()">Clear</button>
+      <span id="save-msg" style="font-size:13px;color:var(--color-success-text);display:none;"></span>
+    </div>
+  </div>
+
+  <div style="font-size:14px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;">Or paste raw lab values — AI will parse them</div>
+  <div class="paste-area">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">Paste any format (requires internet connection for AI parsing):</div>
+    <textarea id="paste-in" style="width:100%;height:130px;resize:vertical;" placeholder="e.g.&#10;TSH 1.8 (0.4-4.0)&#10;Vitamin D 42 ng/mL&#10;Ferritin 12&#10;WBC 5.6 K/uL"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-p" onclick="parsePaste()">Parse with AI ↗</button>
+      <span id="parse-msg" style="font-size:13px;color:var(--color-success-text);display:none;"></span>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;padding:14px 16px;background:var(--color-bg-secondary);border-radius:var(--radius);border:1px solid var(--color-border);">
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Export / import data</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-s" onclick="exportData()">⬇ Export JSON</button>
+      <label class="btn btn-s" style="display:flex;align-items:center;cursor:pointer;">
+        ⬆ Import JSON <input type="file" accept=".json" onchange="importData(event)" style="display:none;"/>
+      </label>
+    </div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;">Export saves all your data as a JSON file. Import restores it — use this to move data between devices or back it up.</div>
+  </div>
+</div>
+
+<script>
+const PANELS={
+  cbc:{label:'CBC',color:'#3266ad',sub:[
+    {key:'wbc',name:'WBC',unit:'K/μL',low:4.0,high:11.0},
+    {key:'rbc',name:'RBC',unit:'M/μL',low:4.0,high:6.0},
+    {key:'hgb',name:'Hemoglobin',unit:'g/dL',low:11.7,high:15.5},
+    {key:'hct',name:'Hematocrit',unit:'%',low:35.0,high:45.0},
+    {key:'mcv',name:'MCV',unit:'fL',low:80.0,high:100.0},
+    {key:'mch',name:'MCH',unit:'pg',low:27.0,high:33.0},
+    {key:'mchc',name:'MCHC',unit:'g/dL',low:31.0,high:36.0},
+    {key:'rdw',name:'RDW',unit:'%',low:11.0,high:15.0},
+    {key:'plt',name:'Platelets',unit:'K/μL',low:150,high:420},
+    {key:'mpv',name:'MPV',unit:'fL',low:8.0,high:12.0},
+    {key:'neut_abs',name:'Neutrophils absolute',unit:'K/μL',low:2.0,high:7.6},
+    {key:'lymph_abs',name:'Lymphocytes absolute',unit:'K/μL',low:0.68,high:3.70},
+    {key:'mono_abs',name:'Monocytes absolute',unit:'K/μL',low:0.0,high:1.0},
+    {key:'eos_abs',name:'Eosinophils absolute',unit:'K/μL',low:0.0,high:1.0},
+    {key:'baso_abs',name:'Basophils absolute',unit:'K/μL',low:0.0,high:0.1},
+    {key:'neutrophils',name:'Neutrophils %',unit:'%',low:39,high:72},
+    {key:'lymphocytes',name:'Lymphocytes %',unit:'%',low:17,high:50},
+    {key:'monocytes',name:'Monocytes %',unit:'%',low:4,high:12},
+    {key:'eosinophils',name:'Eosinophils %',unit:'%',low:0,high:5},
+    {key:'basophils',name:'Basophils %',unit:'%',low:0,high:1.4},
+  ]},
+  metabolic:{label:'Metabolic',color:'#1D9E75',sub:[
+    {key:'glucose',name:'Glucose',unit:'mg/dL',low:65,high:99},
+    {key:'bun',name:'BUN',unit:'mg/dL',low:7,high:25},
+    {key:'creatinine',name:'Creatinine',unit:'mg/dL',low:0.50,high:0.96},
+    {key:'egfr',name:'eGFR',unit:'mL/min/1.73m²',low:60,high:9999},
+    {key:'anion_gap',name:'Anion gap',unit:'mmol/L',low:8,high:19},
+    {key:'sodium',name:'Sodium',unit:'mmol/L',low:135,high:146},
+    {key:'potassium',name:'Potassium',unit:'mmol/L',low:3.5,high:5.3},
+    {key:'chloride',name:'Chloride',unit:'mmol/L',low:98,high:110},
+    {key:'co2',name:'CO₂',unit:'mmol/L',low:20,high:32},
+    {key:'calcium',name:'Calcium',unit:'mg/dL',low:8.6,high:10.2},
+    {key:'protein',name:'Protein total',unit:'g/dL',low:6.1,high:8.1},
+    {key:'albumin',name:'Albumin',unit:'g/dL',low:3.6,high:5.1},
+    {key:'globulin',name:'Globulin',unit:'g/dL',low:1.5,high:4.5},
+    {key:'ag_ratio',name:'A/G ratio',unit:'',low:1.2,high:2.2},
+    {key:'bilirubin',name:'Bilirubin total',unit:'mg/dL',low:0.2,high:1.2},
+    {key:'alp',name:'Alkaline phosphatase',unit:'IU/L',low:31,high:125},
+    {key:'ast',name:'AST',unit:'IU/L',low:10,high:30},
+    {key:'alt',name:'ALT',unit:'IU/L',low:6,high:29},
+    {key:'hba1c',name:'Hemoglobin A1c',unit:'%',low:0,high:5.7},
+    {key:'crp',name:'CRP cardiac',unit:'mg/L',low:0,high:3.0},
+  ]},
+  lipids:{label:'Lipids',color:'#D85A30',sub:[
+    {key:'total_chol',name:'Total cholesterol',unit:'mg/dL',low:0,high:200},
+    {key:'ldl',name:'LDL',unit:'mg/dL',low:0,high:100},
+    {key:'hdl',name:'HDL',unit:'mg/dL',low:50,high:9999},
+    {key:'trig',name:'Triglycerides',unit:'mg/dL',low:0,high:150},
+    {key:'non_hdl',name:'Non-HDL chol',unit:'mg/dL',low:0,high:130},
+    {key:'vldl',name:'VLDL',unit:'mg/dL',low:2,high:30},
+  ]},
+  hormones:{label:'Hormones',color:'#7F77DD',sub:[
+    {key:'testosterone',name:'Testosterone total',unit:'ng/dL',low:2,high:45},
+    {key:'free_test',name:'Free testosterone',unit:'pg/mL',low:0.1,high:6.4},
+    {key:'shbg',name:'SHBG',unit:'nmol/L',low:17,high:124},
+    {key:'dhea_s',name:'DHEA-S',unit:'mcg/dL',low:14,high:349},
+    {key:'dhea_serum',name:'DHEA serum',unit:'ng/dL',low:31,high:701},
+    {key:'estradiol',name:'Estradiol',unit:'pg/mL',low:19,high:144},
+    {key:'progesterone',name:'Progesterone',unit:'ng/mL',low:0,high:1.0},
+    {key:'cortisol',name:'Cortisol AM',unit:'mcg/dL',low:6,high:23},
+    {key:'cortisol_urine',name:'Urinary free cortisol',unit:'mcg/24hr',low:6,high:42},
+    {key:'acth',name:'ACTH plasma',unit:'pg/mL',low:6,high:50},
+    {key:'prolactin',name:'Prolactin',unit:'ng/mL',low:3.0,high:30.0},
+    {key:'lh',name:'LH',unit:'mIU/mL',low:1.7,high:8.6},
+    {key:'fsh',name:'FSH',unit:'mIU/mL',low:2.5,high:10.2},
+    {key:'insulin',name:'Insulin fasting',unit:'μIU/mL',low:2,high:19},
+    {key:'igf1',name:'IGF-1',unit:'ng/mL',low:88,high:246},
+    {key:'ohp17',name:'17-Alpha-Hydroxyprogesterone',unit:'ng/dL',low:15,high:70},
+    {key:'pregnenolone17',name:'17-OH Pregnenolone',unit:'ng/dL',low:53,high:357},
+  ]},
+  thyroid:{label:'Thyroid',color:'#D4537E',sub:[
+    {key:'tsh',name:'TSH',unit:'mIU/L',low:0.40,high:4.50},
+    {key:'free_t4',name:'Free T4',unit:'ng/dL',low:0.8,high:1.4},
+    {key:'free_t3',name:'Free T3',unit:'pg/mL',low:3.0,high:4.7},
+    {key:'total_t4',name:'Total T4',unit:'mcg/dL',low:5.1,high:11.9},
+    {key:'t3_uptake',name:'T3 uptake',unit:'%',low:22,high:35},
+    {key:'free_t4_idx',name:'Free T4 index (T7)',unit:'',low:1.4,high:3.8},
+    {key:'total_t3',name:'Total T3',unit:'ng/dL',low:80,high:200},
+    {key:'tpo_ab',name:'TPO antibodies',unit:'IU/mL',low:0,high:34},
+    {key:'tg_ab',name:'Thyroglobulin Ab',unit:'IU/mL',low:0,high:0.9},
+    {key:'rt3',name:'Reverse T3',unit:'ng/dL',low:9.2,high:24.1},
+  ]},
+  vitamins:{label:'Vitamins & minerals',color:'#BA7517',sub:[
+    {key:'vit_d',name:'Vitamin D (25-OH)',unit:'ng/mL',low:30,high:100},
+    {key:'vit_b12',name:'Vitamin B12',unit:'pg/mL',low:200,high:1100},
+    {key:'folate',name:'Folate',unit:'ng/mL',low:3.4,high:20},
+    {key:'ferritin',name:'Ferritin',unit:'ng/mL',low:16,high:154},
+    {key:'iron',name:'Iron total',unit:'mcg/dL',low:40,high:190},
+    {key:'tibc',name:'Iron binding capacity',unit:'mcg/dL',low:250,high:450},
+    {key:'iron_sat',name:'Iron saturation',unit:'%',low:16,high:45},
+    {key:'magnesium',name:'Magnesium',unit:'mg/dL',low:1.7,high:2.2},
+    {key:'zinc',name:'Zinc',unit:'μg/dL',low:60,high:120},
+    {key:'homocysteine',name:'Homocysteine',unit:'μmol/L',low:0,high:15},
+    {key:'uric_acid',name:'Uric acid',unit:'mg/dL',low:3.5,high:7.2},
+  ]}
+};
+
+const ALL={};
+Object.entries(PANELS).forEach(([pk,p])=>p.sub.forEach(m=>ALL[m.key]={...m,panel:pk}));
+
+const SK='bloodwork_html_v1';
+const CH={};
+let data=[];
+
+function load(){
+  try{
+    const saved=localStorage.getItem(SK);
+    data=saved?JSON.parse(saved):[];
+  }catch(e){data=[];}
+  renderAll();
+}
+function persist(){try{localStorage.setItem(SK,JSON.stringify(data));}catch(e){}}
+
+function st(key,val){
+  const m=ALL[key];if(!m)return 'ok';
+  if(val<m.low)return 'lo';
+  if(m.high<9000&&val>m.high)return 'hi';
+  return 'ok';
+}
+function switchTab(n){
+  const ns=['overview','cbc','metabolic','lipids','hormones','thyroid','vitamins','history','add'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ns[i]===n));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  renderAll();
+}
+function fmtNum(v){return v<0.01?v.toFixed(3):v<1?v.toFixed(2):v<10?parseFloat(v.toFixed(2)):parseFloat(v.toFixed(1));}
+function fmtLabel(v){return v===0?'0':v<1?v.toFixed(2):v<10?v.toFixed(1):String(v);}
+function fmtDate(d){
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [y,m,day]=d.split('-');
+  return months[parseInt(m)-1]+' '+parseInt(day)+', '+y;
+}
+
+function rangeBar(m,val){
+  const noUp=m.high>=9000;
+  const lo=m.low,hi=noUp?val*1.6:m.high;
+  const span=Math.max(hi-lo,0.0001);
+  const vMin=Math.min(val,lo)-span*0.12,vMax=Math.max(val,hi)+span*0.12,vspan=vMax-vMin;
+  const pct=v=>Math.max(0,Math.min(100,((v-vMin)/vspan)*100)).toFixed(1);
+  const bL=pct(lo),bW=noUp?(100-parseFloat(bL)).toFixed(1):(pct(hi)-parseFloat(bL)).toFixed(1);
+  const mc=st(m.key,val)==='hi'?'#e53935':st(m.key,val)==='lo'?'#fb8c00':'#1D9E74';
+  return `<div class="range-wrap"><div class="range-track"><div class="range-fill" style="left:${bL}%;width:${bW}%"></div><div class="range-pin" style="left:${pct(val)}%;background:${mc}"></div></div><div class="range-lbls"><span>${fmtLabel(m.low)}</span><span>${noUp?'≥'+fmtLabel(m.low)+' normal':fmtLabel(m.high)}</span></div></div>`;
+}
+
+function getPts(key){const r=[];data.forEach(e=>{if(e.values[key]!==undefined)r.push({d:e.date,lab:e.lab||'',v:e.values[key]});});return r;}
+
+function deltaStr(pts){
+  if(pts.length<2)return '';
+  const prev=pts[pts.length-2].v,curr=pts[pts.length-1].v,diff=curr-prev;
+  const pct=prev!==0?((diff/Math.abs(prev))*100).toFixed(1):null;
+  const arrow=diff>0?'↑':'↓';
+  const col=diff>0?'#3266ad':'#1D9E75';
+  return `<div class="delta" style="color:${col}">${arrow} ${fmtNum(Math.abs(diff))} vs ${fmtDate(pts[pts.length-2].d)}${pct?' ('+Math.abs(pct)+'%)':''}</div>`;
+}
+
+function makeCard(m,pArr,color,containerId){
+  const lat=pArr[pArr.length-1];
+  const s=st(m.key,lat.v);
+  const nc=s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)';
+  const bc=s==='ok'?'badge-ok':s==='hi'?'badge-hi':'badge-lo';
+  const bt=s==='ok'?'Normal':s==='hi'?'↑ High':'↓ Low';
+  const cid='cv-'+m.key+'-'+containerId;
+  const card=document.createElement('div');
+  card.className='card'+(s==='hi'?' flag-high':s==='lo'?' flag-low':'');
+  const hiL=m.high>=9000?'∞':fmtLabel(m.high);
+  card.innerHTML=`
+    <div class="card-header"><div class="card-name">${m.name}</div><div class="card-unit">${m.unit}</div></div>
+    <div class="card-date">Collected: ${fmtDate(lat.d)}${lat.lab?' · '+lat.lab:''}</div>
+    <div class="card-range">Ref: ${fmtLabel(m.low)} – ${hiL}${m.unit?' '+m.unit:''}</div>
+    <div class="val-row"><span class="val-num" style="color:${nc}">${fmtNum(lat.v)}</span><span class="badge ${bc}">${bt}</span></div>
+    ${rangeBar(m,lat.v)}
+    ${deltaStr(pArr)}
+    ${pArr.length>1?`<div class="chart-wrap"><canvas id="${cid}"></canvas></div>`:'<div class="no-trend">One data point — add more for trend</div>'}`;
+  document.getElementById(containerId).appendChild(card);
+  if(pArr.length>1){
+    requestAnimationFrame(()=>{
+      if(CH[cid])CH[cid].destroy();
+      const ctx=document.getElementById(cid);if(!ctx)return;
+      CH[cid]=new Chart(ctx,{
+        type:'line',
+        data:{
+          labels:pArr.map(p=>fmtDate(p.d)),
+          datasets:[
+            {data:pArr.map(p=>p.v),borderColor:color,backgroundColor:color+'18',borderWidth:2,pointRadius:4,pointBackgroundColor:color,tension:0.35,fill:true},
+            {data:pArr.map(()=>m.low),borderColor:'#BA751750',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false},
+            ...(m.high<9000?[{data:pArr.map(()=>m.high),borderColor:'#E24B4A50',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false}]:[])
+          ]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>[i[0].label],label:i=>i.datasetIndex===0?i.raw+' '+m.unit:null}}},
+          scales:{
+            x:{ticks:{font:{size:9},color:'#888',maxRotation:30,autoSkip:true,maxTicksLimit:8},grid:{display:false}},
+            y:{ticks:{font:{size:9},color:'#888',maxTicksLimit:4},grid:{color:'rgba(128,128,128,0.1)'}}
+          }
+        }
+      });
+    });
+  }
+}
+
+function renderSection(pkey,cid){
+  const el=document.getElementById(cid);el.innerHTML='';
+  const p=PANELS[pkey],markers=p.sub.filter(m=>getPts(m.key).length>0);
+  if(!markers.length){el.innerHTML=`<div class="no-data">No ${p.label} data yet.</div>`;return;}
+  const g=document.createElement('div');g.className='marker-grid';g.id='mg-'+pkey;
+  el.appendChild(g);
+  markers.forEach(m=>makeCard(m,getPts(m.key),p.color,'mg-'+pkey));
+}
+
+function renderOverview(){
+  const c=document.getElementById('ov');c.innerHTML='';
+  let total=0,flags=[];
+  if(data.length){
+    const last=data[data.length-1];
+    Object.entries(last.values).forEach(([k,v])=>{const s=st(k,v);if(s!=='ok'&&ALL[k])flags.push({m:ALL[k],v,s});});
+  }
+  Object.keys(ALL).forEach(k=>{if(getPts(k).length>0)total++;});
+  const lastDate=data.length?data[data.length-1].date:'—';
+  document.getElementById('subtitle').textContent=data.length?'Last test: '+fmtDate(lastDate)+(data[data.length-1].lab?' · '+data[data.length-1].lab:''):'No data yet';
+
+  const sb=document.createElement('div');sb.className='summary-bar';
+  sb.innerHTML=`
+    <div class="stat-card"><div class="stat-label">Lab entries</div><div class="stat-val">${data.length}</div><div class="stat-sub">total tests</div></div>
+    <div class="stat-card"><div class="stat-label">Markers tracked</div><div class="stat-val">${total}</div><div class="stat-sub">with data</div></div>
+    <div class="stat-card"><div class="stat-label">Out of range</div><div class="stat-val" style="color:${flags.length?'#e53935':'var(--color-text)'}">${flags.length}</div><div class="stat-sub">latest results</div></div>
+    <div class="stat-card"><div class="stat-label">Date range</div><div class="stat-val" style="font-size:12px;padding-top:4px;">${data.length?fmtDate(data[0].date):'—'}</div><div class="stat-sub">${data.length>1?'→ '+fmtDate(lastDate):data.length===1?'(one entry)':''}</div></div>`;
+  c.appendChild(sb);
+
+  if(flags.length){
+    const fb=document.createElement('div');fb.className='flag-box';
+    fb.innerHTML=`<div class="flag-title">⚠ Out of range — ${fmtDate(lastDate)}</div>`
+      +flags.map(({m,v,s})=>`<span class="flag-chip" style="color:${s==='hi'?'#e53935':'#fb8c00'}">${m.name}: ${fmtNum(v)} ${m.unit} (${s==='hi'?'↑ high':'↓ low'})</span>`).join('');
+    c.appendChild(fb);
+  }
+
+  Object.entries(PANELS).forEach(([pk,p])=>{
+    const has=p.sub.filter(m=>getPts(m.key).length>0);if(!has.length)return;
+    const sec=document.createElement('div');sec.className='cat-section';
+    const gid='ov-'+pk;
+    sec.innerHTML=`<div class="cat-title"><div class="cat-dot" style="background:${p.color}"></div>${p.label}</div><div class="marker-grid" id="${gid}"></div>`;
+    c.appendChild(sec);
+    has.forEach(m=>makeCard(m,getPts(m.key),p.color,gid));
+  });
+}
+
+function renderHistory(){
+  const c=document.getElementById('hc');
+  if(!data.length){c.innerHTML='<div class="no-data">No entries yet.</div>';return;}
+  const allKeys=[...new Set(data.flatMap(e=>Object.keys(e.values)))];
+  c.innerHTML=`<div style="overflow-x:auto;"><table class="history-table">
+    <thead><tr><th>Date</th><th>Lab</th>${allKeys.map(k=>`<th>${ALL[k]?ALL[k].name:k}<br><span style="font-weight:400;color:var(--color-text-tertiary)">${ALL[k]?ALL[k].unit:''}</span></th>`).join('')}<th></th></tr></thead>
+    <tbody>${[...data].reverse().map((e,ri)=>{
+      const idx=data.length-1-ri;
+      return`<tr>
+        <td style="white-space:nowrap;font-weight:500">${fmtDate(e.date)}</td>
+        <td style="color:var(--color-text-secondary)">${e.lab||'—'}</td>
+        ${allKeys.map(k=>{const v=e.values[k];if(v===undefined)return'<td style="color:var(--color-text-tertiary)">—</td>';
+          const s=st(k,v);return`<td style="color:${s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)'}">${fmtNum(v)}</td>`;}).join('')}
+        <td><button class="del-btn" onclick="delEntry(${idx})" title="Delete">✕</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function showFields(panel){
+  const c=document.getElementById('fields-wrap');
+  if(!panel){c.innerHTML='';return;}
+  c.innerHTML=`<div class="field-grid">${PANELS[panel].sub.map(m=>`
+    <div class="field-item">
+      <div class="field-label">${m.name}</div>
+      <div class="field-sub">${fmtLabel(m.low)} – ${m.high>=9000?'∞':fmtLabel(m.high)} ${m.unit}</div>
+      <input type="number" step="any" id="f-${m.key}" placeholder="value"/>
+    </div>`).join('')}</div>`;
+}
+
+function saveEntry(){
+  const date=document.getElementById('entry-date').value;
+  const lab=document.getElementById('entry-lab').value||'';
+  const panel=document.getElementById('panel-sel').value;
+  if(!date||!panel){alert('Select a date and panel.');return;}
+  const entry={date,lab,values:{}};let n=0;
+  PANELS[panel].sub.forEach(m=>{const el=document.getElementById('f-'+m.key);
+    if(el&&el.value!==''&&!isNaN(parseFloat(el.value))){entry.values[m.key]=parseFloat(el.value);n++;}});
+  if(!n){alert('Enter at least one value.');return;}
+  data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
+  const msg=document.getElementById('save-msg');
+  msg.textContent='✓ Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
+  setTimeout(()=>msg.style.display='none',3000);
+  clearForm();renderAll();
+}
+function clearForm(){
+  document.getElementById('entry-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('entry-lab').value='';
+  document.getElementById('panel-sel').value='';
+  document.getElementById('fields-wrap').innerHTML='';
+}
+function delEntry(idx){if(!confirm('Delete this entry?'))return;data.splice(idx,1);persist();renderAll();}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='blood_work_data_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
+}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const imported=JSON.parse(ev.target.result);
+      if(!Array.isArray(imported))throw new Error('Invalid format');
+      const dates=data.map(d=>d.date);
+      let added=0;
+      imported.forEach(entry=>{
+        if(!dates.includes(entry.date)){data.push(entry);added++;}
+      });
+      data.sort((a,b)=>a.date.localeCompare(b.date));persist();
+      alert('Imported '+added+' new entries ('+imported.length+' total in file).');
+      renderAll();
+    }catch(err){alert('Import failed: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+async function parsePaste(){
+  const text=document.getElementById('paste-in').value.trim();
+  if(!text){alert('Paste some lab values first.');return;}
+  const date=document.getElementById('entry-date').value||new Date().toISOString().split('T')[0];
+  const lab=document.getElementById('entry-lab').value||'';
+  const btn=event.target;btn.textContent='Parsing…';btn.disabled=true;
+  try{
+    const mList=Object.values(ALL).map(m=>`${m.name} → key:${m.key} (${m.unit})`).join('\n');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+        messages:[{role:'user',content:`Extract blood values from this lab text and match to these markers:\n${mList}\n\nLab text:\n${text}\n\nReturn ONLY valid JSON: {"key":numericValue,...}. Keys must match exactly. Numbers only.`}]})});
+    const d=await resp.json();
+    const raw=d.content.filter(i=>i.type==='text').map(i=>i.text).join('');
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    const entry={date,lab,values:{}};let n=0;
+    Object.entries(parsed).forEach(([k,v])=>{if(ALL[k]&&!isNaN(parseFloat(v))){entry.values[k]=parseFloat(v);n++;}});
+    if(!n){alert('No matching markers found. Try manual entry.');return;}
+    data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
+    const msg=document.getElementById('parse-msg');
+    msg.textContent='✓ Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',4000);
+    document.getElementById('paste-in').value='';renderAll();
+  }catch(e){alert('AI parsing requires an internet connection. Try manual entry instead.');}
+  finally{btn.textContent='Parse with AI ↗';btn.disabled=false;}
+}
+
+function renderAll(){
+  renderOverview();
+  Object.keys(PANELS).forEach(pk=>renderSection(pk,'sec-'+pk));
+  renderHistory();
+}
+
+document.getElementById('entry-date').value=new Date().toISOString().split('T')[0];
+load();
+</script>
+</body>
+</html>
