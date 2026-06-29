@@ -1,60 +1,36 @@
 # Blood Work Tracker
 
-A single-file, self-contained HTML app for tracking your lab results over time. No server, no account, no app to install — just open the file in a browser.
-
-![Blood Work Tracker screenshot](https://i.imgur.com/placeholder.png)
+A free, private blood work tracker that runs entirely in your browser. No account, no server, no data ever leaves your device.
 
 ## Features
 
-- **Track 70+ markers** across CBC, Metabolic, Lipids, Hormones, Thyroid, and Vitamins & minerals panels
-- **Trend charts** for every marker across visits
-- **Out-of-range alerts** highlighted on the overview
-- **AI-powered paste parsing** — paste raw lab text and Claude extracts the values automatically
-- **Manual entry** for any panel and date
-- **Export / import** your data as JSON for backup or moving between devices
-- **Dark mode** support
-- **Zero dependencies** except Chart.js (loaded from CDN) and an internet connection for AI parsing
+- Track 60+ lab markers across CBC, Metabolic, Lipids, Hormones, Thyroid, and Vitamins & Minerals panels
+- Visual range bars and trend charts for every marker
+- Flags out-of-range values automatically
+- Paste raw lab text and let AI parse it into the tracker
+- Export and import your data as JSON for backup or to move between devices
+- Dark mode supported
 
-## Getting started
+## How to use
 
-1. Download `index.html`
-2. Open it in any browser (Chrome, Firefox, Safari, Edge)
-3. Go to **+ Add** and enter your first lab results
-
-That's it. Your data is saved in your browser's localStorage — it stays on your device.
-
-## Adding results
-
-**Manual entry** — choose a date, lab name, and panel, then fill in the values you have. You don't need to fill everything; leave blank what you don't have.
-
-**AI paste parsing** — copy the text from your lab portal or PDF and paste it into the text box. The app uses the Claude API to extract and match values automatically. This requires an internet connection.
-
-## Backing up your data
-
-Use **Export JSON** in the + Add tab to download all your data as a file. Use **Import JSON** to restore it on another device or browser. Exports are plain JSON so you can inspect or edit them in any text editor.
-
-## Sharing / deploying
-
-Since it's a single HTML file you can:
-
-- Host it on **GitHub Pages** — push to a repo, enable Pages, done
-- Drop it in **Dropbox / Google Drive** and open with a browser
-- Self-host on any static file server
-
-## Customizing reference ranges
-
-Reference ranges in the file are general population defaults. Labs use different ranges depending on the machine and population — always check your own lab's printed reference intervals. To edit ranges, open `index.html` in a text editor and find the `PANELS` object near the top of the `<script>` section. Each marker looks like:
-
-```js
-{ key: 'wbc', name: 'WBC', unit: 'K/μL', low: 4.0, high: 11.0 }
-```
-
-Change `low` and `high` to match your lab's values.
+1. Open the tracker at the link below
+2. Go to **+ Add** and either enter values manually or paste raw lab text
+3. Use **Export JSON** to back up your data at any time
 
 ## Privacy
 
-All data is stored in your browser's localStorage. Nothing is sent anywhere except when using the AI paste feature, which sends your pasted text to the Anthropic API. No account or login is required.
+All data is stored in your browser's local storage only. Nothing is sent to any server except when you use the AI paste feature, which sends your pasted lab text to the Anthropic API to extract values. No data is stored or logged by Anthropic beyond the standard API call.
 
-## License
+## AI paste feature
 
-MIT — do whatever you want with it.
+The "Parse with AI" button works automatically when accessed via the live link below (no API key needed). If you download the HTML file and open it locally, you would need to add your own Anthropic API key to use that feature — though all other functionality works offline.
+
+## Live link
+
+👉 **[Open the tracker](https://YOUR-USERNAME.github.io/blood-work-tracker)**
+
+*(Replace with your actual GitHub Pages URL after setup)*
+
+## Reference ranges
+
+All reference ranges are standard adult lab ranges. If your lab uses different ranges, you can edit the `PANELS` object at the top of `index.html`.
