@@ -6,7 +6,7 @@ Lab results are medical records. Before sharing them with any AI tool — includ
 
 HIPAA — the Health Insurance Portability and Accountability Act — restricts how hospitals, insurers, and healthcare providers handle your medical data. It does not apply to AI companies. When you share a lab report with Claude, ChatGPT, Perplexity, or any other consumer AI chatbot, you are outside the legal protections that govern your doctor's office or your insurance company. The company's own privacy policy is the only thing governing what happens to your data, and those policies vary widely and can change.
 
-A 2024 KFF survey found that most Americans are concerned about the privacy of their medical data when using AI tools — and that concern is well founded. The risks fall into a few categories.
+The risks fall into a few categories.
 
 ### Risk 1: Training data
 
