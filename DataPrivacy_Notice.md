@@ -22,13 +22,13 @@ What to do: Delete conversations containing health data after you are done with 
 
 ### Risk 3: Re-identification from "anonymous" data
 
-It is a common misconception that removing your name from a lab report makes it anonymous. Research has repeatedly shown that health data can be re-identified with surprisingly little additional information — your age, zip code, and a handful of biomarker values can be enough to narrow down your identity, particularly in smaller populations. A dataset that looks anonymous in isolation rarely stays that way when combined with other data sources.
+It is a common misconception that removing your name from a lab report makes it anonymous. Research has repeatedly shown that health data can be re-identified with surprisingly little additional information — your age, zip code, and a handful of biomarker values can be enough to narrow down your identity, particularly in smaller populations. 
 
 What to do: Only share the numeric values you actually need the AI to process. The more context you strip away — dates, demographics, conditions, medications — the harder re-identification becomes.
 
 ### Risk 4: No guarantee of accuracy
 
-AI models can misread, misparse, or misattribute lab values, especially from PDFs, screenshots, or non-standard lab formats. An error in parsing is usually obvious (a missing value), but a subtle numeric error — transposing digits, for example — could go unnoticed and affect how you interpret your trends over time. The tracker displays what it is given; it does not validate whether the values are medically plausible.
+AI models can misread, misparse, or misattribute lab values, especially from PDFs, screenshots, or non-standard lab formats. An error in parsing is usually obvious (a missing value), but a subtle numeric error — transposing digits, for example — could go unnoticed and affect how you interpret your trends over time. 
 
 What to do: Always cross-check the values that appear in the tracker against your original lab report before relying on them. Never use this tool to make clinical decisions — it is a personal tracking aid, not a diagnostic tool.
 
