@@ -1,6 +1,8 @@
 # Blood Work Tracker — Setup Guide
 
-A self-contained HTML file for tracking lab results over time. No account required, no data ever leaves your device. This guide covers two ways to use the tracker with AI assistance, plus important guidance on protecting your health data before you start.
+A self-contained HTML file for tracking lab results over time. No account required, no data ever leaves your device. This guide covers two ways to use the tracker with AI assistance, specifically configured for Anthropic's Claude. 
+
+Before using it, read the DataPrivacy_Notice document for information about data privacy risks and best practices
 
 ---
 
