@@ -4,8 +4,6 @@ A self-contained HTML file for tracking lab results over time. No account requir
 
 Before using it, read the DataPrivacy_Notice document for information about data privacy risks and best practices
 
-Your data is saved to your browser's local storage, so it'll persist between sessions on the same device.
-
 ---
 
 
