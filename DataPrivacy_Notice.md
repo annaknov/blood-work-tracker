@@ -12,31 +12,21 @@ The risks fall into a few categories.
 
 Most AI companies reserve the right to use conversations to improve their models, unless you explicitly opt out. If you paste your lab results into a chat without opting out, those values — potentially alongside other things you've shared in the conversation — could become part of future training data. Even if individual data points seem innocuous, aggregated health conversations at scale can reveal sensitive patterns.
 
-What to do: On claude.ai, go to **Settings → Privacy** and disable the option that allows your conversations to be used for model training. Do this before sharing any health information.
-
 ### Risk 2: Data breaches and retention
 
 Your conversation is stored on the AI company's servers for some period of time — sometimes indefinitely unless you manually delete it. AI companies are increasingly high-value targets for data breaches. Health data is particularly sensitive because, unlike a compromised password, you cannot change your blood values or your medical history.
-
-What to do: Delete conversations containing health data after you are done with them. On claude.ai, you can delete individual conversations from the sidebar. Do not assume deletion is immediate or that it removes data from all backup systems.
 
 ### Risk 3: Re-identification from "anonymous" data
 
 It is a common misconception that removing your name from a lab report makes it anonymous. Research has repeatedly shown that health data can be re-identified with surprisingly little additional information — your age, zip code, and a handful of biomarker values can be enough to narrow down your identity, particularly in smaller populations. 
 
-What to do: Only share the numeric values you actually need the AI to process. The more context you strip away — dates, demographics, conditions, medications — the harder re-identification becomes.
-
 ### Risk 4: No guarantee of accuracy
 
 AI models can misread, misparse, or misattribute lab values, especially from PDFs, screenshots, or non-standard lab formats. An error in parsing is usually obvious (a missing value), but a subtle numeric error — transposing digits, for example — could go unnoticed and affect how you interpret your trends over time. 
 
-What to do: Always cross-check the values that appear in the tracker against your original lab report before relying on them. Never use this tool to make clinical decisions — it is a personal tracking aid, not a diagnostic tool.
-
 ### Risk 5: Secondary use by third parties
 
 Some AI platforms share data with third-party partners for analytics, advertising, or product improvement purposes. Even if the primary AI company has a reasonable policy, data passed to downstream vendors may be subject to less stringent terms.
-
-What to do: Read the privacy policy of any AI tool before sharing health data. Look specifically for clauses about third-party sharing, data retention periods, and your rights to deletion.
 
 ---
 
