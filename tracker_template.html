@@ -155,7 +155,7 @@ textarea { height: auto; padding: 8px 10px; }
 
 <div id="panel-add" class="panel">
   <div class="add-form">
-    <div style="font-size:15px;font-weight:600;margin-bottom:14px;">Add lab results</div>
+    <div id="form-title" style="font-size:15px;font-weight:600;margin-bottom:14px;">Add lab results</div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
       <div style="display:flex;flex-direction:column;gap:4px;">
         <div class="field-label">Test date</div>
@@ -180,35 +180,49 @@ textarea { height: auto; padding: 8px 10px; }
     </div>
     <div id="fields-wrap"></div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
-      <button class="btn btn-p" onclick="saveEntry()">Save entry</button>
+      <button class="btn btn-p" id="save-btn" onclick="saveEntry()">Save entry</button>
+      <button class="btn btn-s" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none;">Cancel edit</button>
       <button class="btn btn-s" onclick="clearForm()">Clear</button>
       <span id="save-msg" style="font-size:13px;color:var(--color-success-text);display:none;"></span>
     </div>
   </div>
 
-  <div style="margin-top:20px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius);padding:18px;">
-    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">💡 Faster option: let Claude fill this in for you</div>
-    <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:12px;">
-      Instead of entering values manually, you can upload this tracker file to Claude along with screenshots of your lab report, and ask Claude to fill in the values for you.
-    </div>
-    <ol style="font-size:13px;color:var(--color-text-secondary);line-height:2;padding-left:18px;margin-bottom:12px;">
-      <li>Go to <strong>claude.ai</strong> and start a new conversation</li>
-      <li>Upload this <strong>HTML file</strong> and your <strong>lab report screenshots</strong> in the same message</li>
-      <li>Ask Claude: <em style="color:var(--color-text);">"Please fill in this blood work tracker with the values from my lab report screenshots and return the updated file."</em></li>
-      <li>Download the file Claude returns and open it in your browser</li>
-    </ol>
-    <div style="font-size:12px;color:var(--color-text-tertiary);border-top:1px solid var(--color-border);padding-top:10px;margin-top:4px;">
-      Claude can read most lab report formats and will match values to the correct markers automatically. It will also extract reference ranges from your report and use those instead of the NBME defaults where available.
+  <div style="font-size:14px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;">Or paste raw lab values — AI will parse them</div>
+  <div class="paste-area">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">Paste any format (requires internet connection for AI parsing):</div>
+    <textarea id="paste-in" style="width:100%;height:130px;resize:vertical;" placeholder="e.g.&#10;TSH 1.8 (0.4-4.0)&#10;Vitamin D 42 ng/mL&#10;Ferritin 12&#10;WBC 5.6 K/uL"></textarea>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-p" onclick="parsePaste()">Parse with AI ↗</button>
+      <span id="parse-msg" style="font-size:13px;color:var(--color-success-text);display:none;"></span>
     </div>
   </div>
 
-  <div style="margin-top:16px;padding:14px 16px;background:var(--color-bg-secondary);border-radius:var(--radius);border:1px solid var(--color-border);">
+  <div style="font-size:14px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;margin-top:20px;">Or upload a lab report screenshot — AI will extract values <em>and</em> reference ranges</div>
+  <div class="paste-area" style="margin-bottom:0;">
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">Upload a photo or screenshot of your lab report. Claude will extract all values and update reference ranges automatically.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+      <label class="btn btn-s" style="display:flex;align-items:center;cursor:pointer;height:35px;">
+        📷 Choose image <input type="file" id="img-upload" accept="image/*" onchange="previewImage(event)" style="display:none;"/>
+      </label>
+      <span id="img-filename" style="font-size:12px;color:var(--color-text-tertiary);"></span>
+    </div>
+    <div id="img-preview-wrap" style="display:none;margin-bottom:10px;">
+      <img id="img-preview" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid var(--color-border);"/>
+    </div>
+    <div style="margin-top:6px;display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-p" onclick="parseImage()">Parse image with AI ↗</button>
+      <span id="img-msg" style="font-size:13px;color:var(--color-success-text);display:none;"></span>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;padding:14px 16px;background:var(--color-bg-secondary);border-radius:var(--radius);border:1px solid var(--color-border);">
     <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Export / import data</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-s" onclick="exportData()">⬇ Export JSON</button>
       <label class="btn btn-s" style="display:flex;align-items:center;cursor:pointer;">
         ⬆ Import JSON <input type="file" accept=".json" onchange="importData(event)" style="display:none;"/>
       </label>
+      <button class="btn btn-s" onclick="loadSampleData()">↺ Reset to sample data</button>
     </div>
     <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;">Export saves all your data as a JSON file. Import restores it — use this to move data between devices or back it up.</div>
   </div>
@@ -404,8 +418,8 @@ const DESCRIPTIONS={
   uric_acid:"A waste product of purine metabolism. Elevated levels cause gout and are associated with metabolic syndrome and kidney stones.",
 };
 
-const SK = 'bloodwork_tracker_v1';
-const SK_RANGES = 'bloodwork_tracker_ranges_v1';
+const SK = 'bloodwork_v7';
+const SK_RANGES = 'bloodwork_ranges_v7';
 const CH = {};
 let data = [];
 
@@ -476,12 +490,150 @@ function promoteEntryRanges(entry){
   persistRanges();applyActiveRanges();
 }
 
+const SAMPLE_DATA = [
+  {
+    date: '2024-09-12',
+    lab: 'Quest Diagnostics',
+    values: {
+      // CBC — eosinophils high (allergies), RDW slightly high
+      wbc: 6.2, rbc: 4.85, hgb: 14.1, hct: 42.3, mcv: 87, mch: 29.1, mchc: 33.4, rdw: 15.8, plt: 238, mpv: 9.6,
+      neut_abs: 3.8, lymph_abs: 1.9, mono_abs: 0.4, eos_abs: 0.52, baso_abs: 0.03,
+      neutrophils: 61, lymphocytes: 31, monocytes: 6, eosinophils: 8, basophils: 0.5,
+      // Metabolic — glucose borderline high, ALT elevated
+      glucose: 103, bun: 14, creatinine: 0.82, egfr: 95, anion_gap: 11,
+      sodium: 140, potassium: 4.1, chloride: 103, co2: 26,
+      calcium: 9.4, protein: 7.2, albumin: 4.3, globulin: 2.9, ag_ratio: 1.5,
+      bilirubin: 0.7, alp: 68, ast: 22, alt: 52, hba1c: 5.8,
+      // Lipids — LDL high, HDL low
+      total_chol: 218, ldl: 142, hdl: 36, trig: 198, non_hdl: 182, vldl: 40,
+      // Thyroid — TSH slightly elevated
+      tsh: 5.2, free_t4: 1.1, free_t3: 3.4,
+      // Vitamins — ferritin low, Vit D deficient
+      vit_d: 18, vit_b12: 540, ferritin: 11, iron: 55, tibc: 340, iron_sat: 16,
+      magnesium: 2.0, homocysteine: 14.2
+    },
+    ranges: {
+      wbc:{low:3.8,high:10.8}, rbc:{low:4.20,high:5.80}, hgb:{low:13.2,high:17.1}, hct:{low:38.5,high:50.0},
+      mcv:{low:80,high:100}, mch:{low:27,high:33}, mchc:{low:32,high:36}, rdw:{low:11,high:15},
+      plt:{low:140,high:400}, mpv:{low:7.5,high:12.5},
+      neut_abs:{low:1.8,high:7.7}, lymph_abs:{low:0.7,high:4.5}, mono_abs:{low:0.1,high:1.0},
+      eos_abs:{low:0.0,high:0.4}, baso_abs:{low:0.0,high:0.1},
+      neutrophils:{low:40,high:74}, lymphocytes:{low:14,high:46}, monocytes:{low:4,high:13},
+      eosinophils:{low:0,high:7}, basophils:{low:0,high:3},
+      glucose:{low:65,high:99}, bun:{low:6,high:24}, creatinine:{low:0.57,high:1.00},
+      egfr:{low:60,high:9999}, anion_gap:{low:7,high:16},
+      sodium:{low:134,high:144}, potassium:{low:3.5,high:5.2}, chloride:{low:96,high:106}, co2:{low:20,high:29},
+      calcium:{low:8.7,high:10.2}, protein:{low:6.0,high:8.5}, albumin:{low:3.5,high:5.5},
+      globulin:{low:1.5,high:4.5}, ag_ratio:{low:1.1,high:2.5},
+      bilirubin:{low:0.2,high:1.2}, alp:{low:39,high:117}, ast:{low:0,high:40}, alt:{low:0,high:44},
+      hba1c:{low:0,high:5.6},
+      total_chol:{low:0,high:200}, ldl:{low:0,high:100}, hdl:{low:40,high:9999},
+      trig:{low:0,high:150}, non_hdl:{low:0,high:130}, vldl:{low:2,high:30},
+      tsh:{low:0.40,high:4.50}, free_t4:{low:0.82,high:1.77}, free_t3:{low:2.0,high:4.4},
+      vit_d:{low:30,high:100}, vit_b12:{low:200,high:1100},
+      ferritin:{low:30,high:400}, iron:{low:59,high:158}, tibc:{low:250,high:370}, iron_sat:{low:15,high:55},
+      magnesium:{low:1.6,high:2.6}, homocysteine:{low:0,high:11.4}
+    }
+  },
+  {
+    date: '2025-03-05',
+    lab: 'Labcorp',
+    values: {
+      // CBC — eosinophils still slightly elevated, RDW improved
+      wbc: 5.8, rbc: 4.92, hgb: 14.6, hct: 43.1, mcv: 88, mch: 29.7, mchc: 33.9, rdw: 13.9, plt: 251, mpv: 9.2,
+      neut_abs: 3.5, lymph_abs: 1.7, mono_abs: 0.5, eos_abs: 0.38, baso_abs: 0.02,
+      neutrophils: 60, lymphocytes: 29, monocytes: 9, eosinophils: 4, basophils: 0.4,
+      // Metabolic — glucose improving, ALT still mildly high
+      glucose: 97, bun: 16, creatinine: 1.22, egfr: 68, anion_gap: 12,
+      sodium: 141, potassium: 3.3, chloride: 104, co2: 25,
+      calcium: 9.6, protein: 7.4, albumin: 3.4, globulin: 3.0, ag_ratio: 1.5,
+      bilirubin: 0.6, alp: 72, ast: 24, alt: 38, hba1c: 5.6,
+      // Lipids — improving but LDL still above Labcorp optimal, trig improving
+      total_chol: 208, ldl: 131, hdl: 38, trig: 172, non_hdl: 166, vldl: 34,
+      // Thyroid — TSH improved after treatment
+      tsh: 3.8, free_t4: 0.78, free_t3: 2.1,
+      // Vitamins — Vit D still low, ferritin recovering
+      vit_d: 22, vit_b12: 190, ferritin: 18, iron: 62, tibc: 355, iron_sat: 14,
+      magnesium: 1.7, homocysteine: 12.1
+    },
+    ranges: {
+      wbc:{low:3.8,high:10.8}, rbc:{low:4.14,high:5.80}, hgb:{low:12.6,high:17.7}, hct:{low:37.5,high:51.0},
+      mcv:{low:79,high:97}, mch:{low:26.6,high:33.0}, mchc:{low:31.5,high:35.7}, rdw:{low:12.3,high:15.4},
+      plt:{low:150,high:379}, mpv:{low:7.5,high:12.5},
+      neut_abs:{low:1.8,high:7.7}, lymph_abs:{low:0.7,high:4.5}, mono_abs:{low:0.1,high:0.9},
+      eos_abs:{low:0.0,high:0.5}, baso_abs:{low:0.0,high:0.3},
+      neutrophils:{low:40,high:74}, lymphocytes:{low:16,high:47}, monocytes:{low:4,high:13},
+      eosinophils:{low:0,high:5}, basophils:{low:0,high:2},
+      glucose:{low:70,high:99}, bun:{low:7,high:25}, creatinine:{low:0.70,high:1.18},
+      egfr:{low:60,high:9999}, anion_gap:{low:7,high:16},
+      sodium:{low:136,high:145}, potassium:{low:3.5,high:5.3}, chloride:{low:98,high:110}, co2:{low:21,high:33},
+      calcium:{low:8.6,high:10.3}, protein:{low:6.1,high:8.1}, albumin:{low:3.6,high:5.1},
+      globulin:{low:1.9,high:3.7}, ag_ratio:{low:1.0,high:2.5},
+      bilirubin:{low:0.0,high:1.2}, alp:{low:52,high:145}, ast:{low:0,high:35}, alt:{low:0,high:35},
+      hba1c:{low:0,high:5.6},
+      total_chol:{low:0,high:200}, ldl:{low:0,high:130}, hdl:{low:40,high:9999},
+      trig:{low:0,high:150}, non_hdl:{low:0,high:160}, vldl:{low:2,high:30},
+      tsh:{low:0.45,high:4.50}, free_t4:{low:0.80,high:1.76}, free_t3:{low:2.3,high:4.2},
+      vit_d:{low:30,high:100}, vit_b12:{low:200,high:1100},
+      ferritin:{low:20,high:345}, iron:{low:40,high:175}, tibc:{low:250,high:425}, iron_sat:{low:16,high:45},
+      magnesium:{low:1.8,high:2.4}, homocysteine:{low:0,high:15.0}
+    }
+  },
+  {
+    date: '2026-05-14',
+    lab: 'Labcorp',
+    values: {
+      // CBC — all normal now
+      wbc: 11.4, rbc: 4.88, hgb: 14.9, hct: 44.0, mcv: 89, mch: 30.5, mchc: 34.2, rdw: 12.6, plt: 244, mpv: 9.4,
+      neut_abs: 3.2, lymph_abs: 1.8, mono_abs: 0.42, eos_abs: 0.56, baso_abs: 0.02,
+      neutrophils: 57, lymphocytes: 32, monocytes: 7, eosinophils: 6, basophils: 0.4,
+      // Metabolic — AST elevated, sodium low, bilirubin mildly high, glucose borderline
+      glucose: 101, bun: 15, creatinine: 0.91, egfr: 93, anion_gap: 10,
+      sodium: 134, potassium: 4.2, chloride: 104, co2: 26,
+      calcium: 9.5, protein: 7.3, albumin: 4.4, globulin: 2.9, ag_ratio: 1.5,
+      bilirubin: 1.4, alp: 65, ast: 38, alt: 28, hba1c: 5.7, crp: 0.4,
+      // Lipids — LDL still high, HDL low
+      total_chol: 198, ldl: 132, hdl: 38, trig: 138, non_hdl: 150, vldl: 28,
+      // Thyroid — free T3 low
+      tsh: 1.64, free_t4: 1.09, free_t3: 1.8, total_t4: 8.1,
+      // Hormones
+      testosterone: 612, free_test: 14.2, shbg: 38, dhea_s: 198, estradiol: 24, cortisol: 14.2,
+      // Vitamins — uric acid elevated, magnesium low
+      vit_d: 52, vit_b12: 568, ferritin: 47, iron: 91, tibc: 328, iron_sat: 28,
+      magnesium: 1.6, homocysteine: 8.4, uric_acid: 9.1
+    },
+    ranges: {
+      wbc:{low:3.8,high:10.8}, rbc:{low:4.14,high:5.80}, hgb:{low:12.6,high:17.7}, hct:{low:37.5,high:51.0},
+      mcv:{low:79,high:97}, mch:{low:26.6,high:33.0}, mchc:{low:31.5,high:35.7}, rdw:{low:12.3,high:15.4},
+      plt:{low:150,high:379}, mpv:{low:7.5,high:12.5},
+      neut_abs:{low:1.8,high:7.7}, lymph_abs:{low:0.7,high:4.5}, mono_abs:{low:0.1,high:0.9},
+      eos_abs:{low:0.0,high:0.5}, baso_abs:{low:0.0,high:0.3},
+      neutrophils:{low:40,high:74}, lymphocytes:{low:16,high:47}, monocytes:{low:4,high:13},
+      eosinophils:{low:0,high:5}, basophils:{low:0,high:2},
+      glucose:{low:70,high:99}, bun:{low:7,high:25}, creatinine:{low:0.70,high:1.18},
+      egfr:{low:60,high:9999}, anion_gap:{low:7,high:16},
+      sodium:{low:136,high:145}, potassium:{low:3.5,high:5.3}, chloride:{low:98,high:110}, co2:{low:21,high:33},
+      calcium:{low:8.6,high:10.3}, protein:{low:6.1,high:8.1}, albumin:{low:3.6,high:5.1},
+      globulin:{low:1.9,high:3.7}, ag_ratio:{low:1.0,high:2.5},
+      bilirubin:{low:0.0,high:1.2}, alp:{low:44,high:147}, ast:{low:0,high:35}, alt:{low:0,high:35},
+      hba1c:{low:0,high:5.6}, crp:{low:0,high:3.0},
+      total_chol:{low:0,high:200}, ldl:{low:0,high:130}, hdl:{low:40,high:9999},
+      trig:{low:0,high:150}, non_hdl:{low:0,high:160}, vldl:{low:2,high:30},
+      tsh:{low:0.450,high:4.500}, free_t4:{low:0.82,high:1.77}, free_t3:{low:2.0,high:4.4}, total_t4:{low:4.5,high:12.5},
+      testosterone:{low:264,high:916}, free_test:{low:9.3,high:26.5}, shbg:{low:16.5,high:55.9},
+      dhea_s:{low:102,high:416}, estradiol:{low:7.6,high:42.6}, cortisol:{low:6.2,high:19.4},
+      vit_d:{low:30,high:100}, vit_b12:{low:200,high:1100},
+      ferritin:{low:20,high:345}, iron:{low:40,high:175}, tibc:{low:250,high:425}, iron_sat:{low:16,high:45},
+      magnesium:{low:1.8,high:2.4}, homocysteine:{low:0,high:15.0}, uric_acid:{low:3.7,high:8.6}
+    }
+  }
+];
 
 function load(){
   try{
     const saved = localStorage.getItem(SK);
-    data = saved ? JSON.parse(saved) : [];
-  } catch(e){ data = []; }
+    data = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(SAMPLE_DATA));
+  } catch(e){ data = JSON.parse(JSON.stringify(SAMPLE_DATA)); }
   loadActiveRanges();
   renderAll();
 }
@@ -589,11 +741,32 @@ function makeCard(m,pArr,color,containerId){
     ?'<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:3px;">\u25cf Out of range in '+pastFlags.length+' prior result'+(pastFlags.length>1?'s':'')+'</div>'
     :'';
 
+  // Find the data index for the latest point so we can save edits
+  const latDataIdx=data.findIndex(e=>e.date===lat.d&&(e.lab||'')===(lat.lab||''));
+  const editId='ei-'+m.key+'-'+containerId;
+  const valDisplayId='vd-'+m.key+'-'+containerId;
+
   card.innerHTML=
-    '<div class="card-header"><div class="card-name">'+m.name+'</div><div class="card-unit">'+m.unit+'</div></div>'+
+    '<div class="card-header">'+
+      '<div class="card-name">'+m.name+'</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;">'+
+        '<div class="card-unit">'+m.unit+'</div>'+
+        (latDataIdx>=0?'<button class="del-btn" onclick="startCardEdit(\''+editId+'\',\''+valDisplayId+'\','+lat.v+',\''+m.key+'\','+latDataIdx+')" title="Edit value" style="font-size:11px;padding:1px 5px;">\u270e</button>':'')+'</div>'+
+    '</div>'+
     '<div class="card-date">Collected: '+fmtDate(lat.d)+(lat.lab?' \u00b7 '+lat.lab:'')+'</div>'+
     '<div class="card-range" style="'+(hasRng?'':'color:var(--color-text-tertiary);font-style:italic;')+'">'+rangeText+rangeNote+'</div>'+
-    '<div class="val-row"><span class="val-num" style="color:'+nc+'">'+fmtNum(lat.v)+'</span><span class="badge '+badgeStyle+'>'+bt+'</span></div>'+
+    '<div class="val-row" id="'+valDisplayId+'">'+
+      '<span class="val-num" style="color:'+nc+'">'+fmtNum(lat.v)+'</span>'+
+      '<span class="badge '+badgeStyle+'>'+bt+'</span>'+
+    '</div>'+
+    '<div id="'+editId+'" style="display:none;margin-bottom:8px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;">'+
+        '<input type="number" step="any" id="'+editId+'-inp" value="'+lat.v+'" style="width:110px;height:32px;font-size:15px;font-weight:600;" onkeydown="if(event.key===\'Enter\')saveCardEdit(\''+editId+'\',\''+valDisplayId+'\',\''+m.key+'\','+latDataIdx+')"/>'+
+        '<span style="font-size:12px;color:var(--color-text-tertiary);">'+m.unit+'</span>'+
+        '<button class="btn btn-p" onclick="saveCardEdit(\''+editId+'\',\''+valDisplayId+'\',\''+m.key+'\','+latDataIdx+')" style="height:30px;padding:0 12px;font-size:12px;">\u2713</button>'+
+        '<button class="del-btn" onclick="cancelCardEdit(\''+editId+'\',\''+valDisplayId+'\')" style="font-size:12px;">\u2715</button>'+
+      '</div>'+
+    '</div>'+
     (hasRng?rangeBarPt(latRng,m.key,lat.v):'')+
     pastFlagNote+
     deltaStr(pArr)+
@@ -704,18 +877,15 @@ function renderOverview(){
   document.getElementById('subtitle').textContent=data.length?'Last test: '+fmtDate(lastDate)+(data[data.length-1].lab?' · '+data[data.length-1].lab:''):'No data yet — go to + Add to enter your first results';
 
   if(!data.length){
-    c.innerHTML=`<div class="no-data" style="padding:50px 20px;max-width:520px;margin:0 auto;text-align:center;">
+    c.innerHTML=`<div class="no-data" style="padding:50px 20px;max-width:480px;margin:0 auto;text-align:center;">
       <div style="font-size:36px;margin-bottom:14px;">🩺</div>
       <div style="font-size:17px;font-weight:600;margin-bottom:8px;">Welcome to your Blood Work Tracker</div>
-      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px;line-height:1.7;">
-        No results yet. Add data two ways:
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:22px;line-height:1.7;">
+        No results yet. You can add data two ways:
         <br><br>
-        <strong>Let Claude fill it in</strong> — upload this HTML file and your lab report screenshots to <a href="https://claude.ai" target="_blank" style="color:#2563eb;">claude.ai</a> and ask Claude to populate the tracker for you.
+        <strong>Paste raw lab text</strong> — copy your results straight from your lab portal or PDF and click <em>Parse with AI</em> to auto-fill everything.
         <br><br>
-        <strong>Enter manually</strong> — go to <strong>+ Add</strong>, pick a panel (CBC, Metabolic, Lipids…), and type in each value.
-      </div>
-      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:22px;line-height:1.6;padding:10px 14px;background:var(--color-bg-secondary);border-radius:8px;text-align:left;">
-        Once you have results, out-of-range values are flagged here based on the reference ranges from your most recent lab test.
+        <strong>Enter manually</strong> — pick a panel (CBC, Metabolic, Lipids…) and type in each value. You can edit any value at any time by clicking directly on it in the <strong>History</strong> tab.
       </div>
       <button class="btn btn-p" onclick="switchTab('add')" style="height:40px;padding:0 24px;font-size:14px;">+ Add your first results</button>
     </div>`;
@@ -757,6 +927,11 @@ function renderOverview(){
     c.appendChild(fb);
   }
 
+  const hint=document.createElement('div');
+  hint.style.cssText='font-size:12px;color:var(--color-text-tertiary);margin-bottom:16px;';
+  hint.textContent='Tip: click the \u270e pencil on any card to edit that value, or go to the History tab to click directly on any value in the table to edit it.';
+  c.appendChild(hint);
+
   Object.entries(PANELS).forEach(([pk,p])=>{
     const has=p.sub.filter(m=>getPts(m.key).length>0);if(!has.length)return;
     const sec=document.createElement('div');sec.className='cat-section';
@@ -771,11 +946,15 @@ function renderHistory(){
   const c=document.getElementById('hc');
   if(!data.length){c.innerHTML='<div class="no-data">No entries yet.</div>';return;}
   const allKeys=[...new Set(data.flatMap(e=>Object.keys(e.values)))];
-  let html='<div style="overflow-x:auto;"><table class="history-table"><thead><tr><th>Date</th><th>Lab</th>';
+  let html='<div style="overflow-x:auto;"><table class="history-table"><thead><tr>';
+  html+='<th>Date</th><th>Lab</th>';
   allKeys.forEach(k=>{
     html+='<th>'+(ALL[k]?ALL[k].name:k)+'<br><span style="font-weight:400;color:var(--color-text-tertiary)">'+(ALL[k]?ALL[k].unit:'')+'</span></th>';
   });
-  html+='<th></th></tr></thead><tbody>';
+  html+='<th></th></tr>';
+  html+='<tr><td colspan="'+(2+allKeys.length+1)+'" style="font-size:10px;color:var(--color-text-tertiary);padding:4px 9px;background:var(--color-bg-secondary);">Click any value to edit it inline. Press Enter to save, Escape to cancel.</td></tr>';
+  html+='</thead><tbody>';
+
   [...data].reverse().forEach((e,ri)=>{
     const idx=data.length-1-ri;
     const rowHasFlag=Object.entries(e.values).some(([k,v])=>{
@@ -787,19 +966,65 @@ function renderHistory(){
     html+='<td style="color:var(--color-text-secondary)">'+(e.lab||'—')+'</td>';
     allKeys.forEach(k=>{
       const v=e.values[k];
-      if(v===undefined){html+='<td style="color:var(--color-text-tertiary)">—</td>';return;}
       const rng=e.ranges&&e.ranges[k]&&e.ranges[k].low!==undefined?e.ranges[k]:(ALL[k]&&ALL[k].low!==undefined?ALL[k]:null);
-      const s=rng?stPt(k,v,rng):'ok';
+      const s=(v!==undefined&&rng)?stPt(k,v,rng):'ok';
       const hiLabel=rng&&rng.high>=9000?'&infin;':(rng?fmtLabel(rng.high):'?');
-      const title=rng?'Ref: '+fmtLabel(rng.low)+'\u2013'+hiLabel:'No reference range';
+      const title=(rng?'Ref: '+fmtLabel(rng.low)+'\u2013'+hiLabel:'No reference range')+' \u2014 click to edit';
       const bold=s!=='ok'?'font-weight:600;':'';
-      html+='<td style="color:'+(s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)')+';'+bold+'" title="'+title+'">'+fmtNum(v)+(s==='hi'?' \u2191':s==='lo'?' \u2193':'')+'</td>';
+      const col=s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)';
+      const arrow=s==='hi'?' \u2191':s==='lo'?' \u2193':'';
+      if(v===undefined){
+        // Empty cell — click to add a value
+        html+='<td style="color:var(--color-text-tertiary);cursor:pointer;" title="Click to add value" onclick="startCellEdit(this,'+idx+',\''+k+'\',\'\')">—</td>';
+      } else {
+        html+='<td style="color:'+col+';'+bold+'cursor:pointer;" title="'+title+'" onclick="startCellEdit(this,'+idx+',\''+k+'\','+v+')">'+fmtNum(v)+arrow+'</td>';
+      }
     });
-    html+='<td><button class="del-btn" onclick="delEntry('+idx+')" title="Delete">\u2715</button></td>';
+    html+='<td style="white-space:nowrap;"><button class="del-btn" onclick="editEntry('+idx+')" title="Edit all fields" style="margin-right:2px;">\u270e</button><button class="del-btn" onclick="delEntry('+idx+')" title="Delete">\u2715</button></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
   c.innerHTML=html;
+}
+
+function startCellEdit(td, dataIdx, key, currentVal){
+  // If already editing this cell, ignore
+  if(td.querySelector('input'))return;
+  const origHTML=td.innerHTML;
+  const origStyle=td.getAttribute('style');
+  td.innerHTML='<input type="number" step="any" value="'+currentVal+'" placeholder="value" style="width:80px;height:24px;font-size:12px;padding:0 4px;" />';
+  td.style.padding='4px 6px';
+  const inp=td.querySelector('input');
+  inp.focus();inp.select();
+
+  function commit(){
+    const newVal=inp.value.trim();
+    if(newVal===''&&currentVal===''){
+      // Was empty, still empty — restore
+      td.innerHTML=origHTML;td.setAttribute('style',origStyle);
+      return;
+    }
+    if(newVal===''||newVal===String(currentVal)){
+      // No change or cleared — restore
+      td.innerHTML=origHTML;td.setAttribute('style',origStyle);
+      return;
+    }
+    const parsed=parseFloat(newVal);
+    if(isNaN(parsed)){td.innerHTML=origHTML;td.setAttribute('style',origStyle);return;}
+    const entry=data[dataIdx];
+    if(!entry)return;
+    entry.values[key]=parsed;
+    if(!entry.ranges)entry.ranges={};
+    if(ALL[key]&&ALL[key].low!==undefined) entry.ranges[key]={low:ALL[key].low,high:ALL[key].high};
+    persist();
+    renderAll();
+  }
+
+  inp.addEventListener('keydown',ev=>{
+    if(ev.key==='Enter'){ev.preventDefault();commit();}
+    if(ev.key==='Escape'){td.innerHTML=origHTML;td.setAttribute('style',origStyle);}
+  });
+  inp.addEventListener('blur',commit);
 }
 
 function showFields(panel){
@@ -813,32 +1038,107 @@ function showFields(panel){
     </div>`).join('')}</div>`;
 }
 
+let editingIdx = null; // index into data[] currently being edited
+
+function editEntry(idx){
+  const e=data[idx];
+  editingIdx=idx;
+  // Switch to + Add tab
+  switchTab('add');
+  // Populate header fields
+  document.getElementById('entry-date').value=e.date;
+  document.getElementById('entry-lab').value=e.lab||'';
+  // Detect which panel has the most values for this entry
+  let bestPanel='cbc', bestCount=0;
+  Object.keys(PANELS).forEach(pk=>{
+    const count=PANELS[pk].sub.filter(m=>e.values[m.key]!==undefined).length;
+    if(count>bestCount){bestCount=count;bestPanel=pk;}
+  });
+  const sel=document.getElementById('panel-sel');
+  sel.value=bestPanel;
+  showFields(bestPanel);
+  // Fill in the values
+  PANELS[bestPanel].sub.forEach(m=>{
+    const el=document.getElementById('f-'+m.key);
+    if(el&&e.values[m.key]!==undefined) el.value=e.values[m.key];
+  });
+  // Update UI to editing mode
+  document.getElementById('form-title').textContent='Edit entry — '+fmtDate(e.date)+(e.lab?' \u00b7 '+e.lab:'');
+  document.getElementById('save-btn').textContent='Save changes';
+  document.getElementById('cancel-edit-btn').style.display='';
+  // Scroll form into view
+  document.getElementById('form-title').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelEdit(){
+  editingIdx=null;
+  clearForm();
+}
+
 function saveEntry(){
   const date=document.getElementById('entry-date').value;
   const lab=document.getElementById('entry-lab').value||'';
   const panel=document.getElementById('panel-sel').value;
   if(!date||!panel){alert('Select a date and panel.');return;}
+
+  if(editingIdx!==null){
+    // Editing an existing entry — merge the new values into it
+    const entry=data[editingIdx];
+    entry.date=date;
+    entry.lab=lab;
+    if(!entry.ranges)entry.ranges={};
+    let n=0;
+    PANELS[panel].sub.forEach(m=>{
+      const el=document.getElementById('f-'+m.key);
+      if(el&&el.value!==''&&!isNaN(parseFloat(el.value))){
+        entry.values[m.key]=parseFloat(el.value);
+        entry.ranges[m.key]={low:m.low,high:m.high};
+        n++;
+      } else if(el&&el.value===''&&entry.values[m.key]!==undefined){
+        // User cleared the field — remove that value
+        delete entry.values[m.key];
+        delete entry.ranges[m.key];
+      }
+    });
+    data.sort((a,b)=>a.date.localeCompare(b.date));
+    persist();
+    promoteEntryRanges(data[data.length-1]);
+    const msg=document.getElementById('save-msg');
+    msg.textContent='\u2713 Updated '+fmtDate(date);msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',3000);
+    editingIdx=null;
+    clearForm();renderAll();
+    return;
+  }
+
+  // New entry
   const entry={date,lab,values:{},ranges:{}};let n=0;
   PANELS[panel].sub.forEach(m=>{const el=document.getElementById('f-'+m.key);
     if(el&&el.value!==''&&!isNaN(parseFloat(el.value))){
       entry.values[m.key]=parseFloat(el.value);
-      entry.ranges[m.key]={low:m.low,high:m.high}; // snapshot current range
+      entry.ranges[m.key]={low:m.low,high:m.high};
       n++;
     }});
   if(!n){alert('Enter at least one value.');return;}
   data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
   promoteEntryRanges(entry);
   const msg=document.getElementById('save-msg');
-  msg.textContent='✓ Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
+  msg.textContent='\u2713 Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
   setTimeout(()=>msg.style.display='none',3000);
   clearForm();renderAll();
 }
+
 function clearForm(){
+  editingIdx=null;
   document.getElementById('entry-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('entry-lab').value='';
   document.getElementById('panel-sel').value='';
   document.getElementById('fields-wrap').innerHTML='';
+  document.getElementById('form-title').textContent='Add lab results';
+  document.getElementById('save-btn').textContent='Save entry';
+  document.getElementById('cancel-edit-btn').style.display='none';
 }
+
 function delEntry(idx){if(!confirm('Delete this entry?'))return;data.splice(idx,1);persist();renderAll();}
 
 function exportData(){
@@ -867,6 +1167,118 @@ function importData(e){
   reader.readAsText(file);
 }
 
+async function parsePaste(){
+  const text=document.getElementById('paste-in').value.trim();
+  if(!text){alert('Paste some lab values first.');return;}
+  const date=document.getElementById('entry-date').value||new Date().toISOString().split('T')[0];
+  const lab=document.getElementById('entry-lab').value||'';
+  const btn=event.target;btn.textContent='Parsing…';btn.disabled=true;
+  try{
+    const mList=Object.values(ALL).map(m=>`${m.name} → key:${m.key} (${m.unit})`).join('\n');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+        messages:[{role:'user',content:`Extract blood values from this lab text and match to these markers:\n${mList}\n\nLab text:\n${text}\n\nReturn ONLY valid JSON: {"key":numericValue,...}. Keys must match exactly. Numbers only.`}]})});
+    const d=await resp.json();
+    const raw=d.content.filter(i=>i.type==='text').map(i=>i.text).join('');
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    const entry={date,lab,values:{},ranges:{}};let n=0;
+    Object.entries(parsed).forEach(([k,v])=>{if(ALL[k]&&!isNaN(parseFloat(v))){
+      entry.values[k]=parseFloat(v);
+      entry.ranges[k]={low:ALL[k].low,high:ALL[k].high}; // snapshot current range
+      n++;
+    }});
+    if(!n){alert('No matching markers found. Try manual entry.');return;}
+    data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
+    promoteEntryRanges(entry);
+    const msg=document.getElementById('parse-msg');
+    msg.textContent='✓ Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',4000);
+    document.getElementById('paste-in').value='';renderAll();
+  }catch(e){alert('AI parsing requires an internet connection and API access. Try manual entry instead.');}
+  finally{btn.textContent='Parse with AI ↗';btn.disabled=false;}
+}
+
+// ── Image upload & parsing ──────────────────────────────────────
+function previewImage(e){
+  const file=e.target.files[0];if(!file)return;
+  document.getElementById('img-filename').textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const prev=document.getElementById('img-preview');
+    prev.src=ev.target.result;
+    document.getElementById('img-preview-wrap').style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function parseImage(){
+  const input=document.getElementById('img-upload');
+  const file=input.files[0];
+  if(!file){alert('Please choose an image first.');return;}
+  const date=document.getElementById('entry-date').value||new Date().toISOString().split('T')[0];
+  const lab=document.getElementById('entry-lab').value||'';
+  const btn=event.target;btn.textContent='Parsing…';btn.disabled=true;
+  try{
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(',')[1]);
+      r.onerror=()=>rej(new Error('Read failed'));
+      r.readAsDataURL(file);
+    });
+    const mList=Object.values(ALL).map(m=>`${m.name} → key:${m.key} (${m.unit})`).join('\n');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:file.type,data:base64}},
+          {type:'text',text:`You are a lab report parser. Extract all blood test values AND their reference ranges from this lab report image.\n\nMatch to these markers:\n${mList}\n\nReturn ONLY valid JSON with this structure:\n{"values":{"key":numericValue,...},"ranges":{"key":{"low":number,"high":number},...}}\n\nFor ranges: use the reference range printed on the report. If a range has no upper bound (e.g. ">60"), use 9999. Keys must exactly match the list above. Numbers only.`}
+        ]}]})});
+    const d=await resp.json();
+    const raw=d.content.filter(i=>i.type==='text').map(i=>i.text).join('');
+    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    // Save values + attach extracted ranges directly to this entry
+    const entry={date,lab,values:{},ranges:{}};let nv=0;
+    const extractedRanges=parsed.ranges||{};
+    if(parsed.values){
+      Object.entries(parsed.values).forEach(([k,v])=>{if(ALL[k]&&!isNaN(parseFloat(v))){
+        entry.values[k]=parseFloat(v);
+        // Use extracted range from image if available, else fall back to current global
+        if(extractedRanges[k]&&!isNaN(parseFloat(extractedRanges[k].low))&&!isNaN(parseFloat(extractedRanges[k].high))){
+          entry.ranges[k]={low:parseFloat(extractedRanges[k].low),high:parseFloat(extractedRanges[k].high)};
+        } else {
+          entry.ranges[k]={low:ALL[k].low,high:ALL[k].high};
+        }
+        nv++;
+      }});
+    }
+    // No longer write extracted ranges to global customRanges — they stay per-entry
+    const nr=Object.keys(entry.ranges).length;
+    if(nv>0){
+      data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
+      // Promote image-extracted ranges with source=upload
+      if(entry.ranges){
+        Object.entries(entry.ranges).forEach(([k,r])=>{
+          const cur=activeRanges[k];
+          if(!cur||cur.source!=='manual'){
+            activeRanges[k]={low:r.low,high:r.high,
+              source:'lab_result',
+              sourceLabel:(entry.lab||'Lab')+' · '+fmtDateSimple(entry.date)+' (image)'};
+          }
+        });
+        persistRanges();applyActiveRanges();
+      }
+    }
+    const msg=document.getElementById('img-msg');
+    if(nv===0){msg.style.color='var(--color-danger-text)';msg.textContent='No matching markers found. Try manual entry.';msg.style.display='block';return;}
+    msg.style.color='var(--color-success-text)';
+    msg.textContent=`✓ Saved ${nv} values with ${nr} lab-specific reference ranges for ${fmtDate(date)}`;
+    msg.style.display='block';
+    setTimeout(()=>msg.style.display='none',5000);
+    renderAll();
+  }catch(e){alert('Image parsing failed. Check your internet connection and try again.\n\nError: '+e.message);}
+  finally{btn.textContent='Parse image with AI ↗';btn.disabled=false;}
+}
+
+// ── Reference Ranges editor ──────────────────────────────────────
 // ── Reference Ranges editor ──────────────────────────────────────
 function renderReferences(){
   const c=document.getElementById('ref-container');
@@ -1011,6 +1423,43 @@ function resetAllRanges(){
 
 // QUEST_DEFAULTS captured at startup in captureQuestDefaults()
 
+
+function loadSampleData(){
+  if(!confirm('Replace all data with sample entries?'))return;
+  data=JSON.parse(JSON.stringify(SAMPLE_DATA));
+  activeRanges={};
+  persist();
+  if(data.length) promoteEntryRanges(data[data.length-1]);
+  renderAll();
+}
+
+function startCardEdit(editId, valDisplayId, currentVal, key, dataIdx){
+  document.getElementById(valDisplayId).style.display='none';
+  const wrap=document.getElementById(editId);
+  wrap.style.display='block';
+  const inp=document.getElementById(editId+'-inp');
+  inp.value=currentVal;
+  inp.focus();inp.select();
+}
+
+function cancelCardEdit(editId, valDisplayId){
+  document.getElementById(editId).style.display='none';
+  document.getElementById(valDisplayId).style.display='';
+}
+
+function saveCardEdit(editId, valDisplayId, key, dataIdx){
+  const inp=document.getElementById(editId+'-inp');
+  const newVal=parseFloat(inp.value);
+  if(isNaN(newVal)){inp.focus();return;}
+  const entry=data[dataIdx];
+  if(!entry){cancelCardEdit(editId,valDisplayId);return;}
+  entry.values[key]=newVal;
+  // Update range snapshot too
+  if(!entry.ranges)entry.ranges={};
+  if(ALL[key]&&ALL[key].low!==undefined) entry.ranges[key]={low:ALL[key].low,high:ALL[key].high};
+  persist();
+  renderAll();
+}
 
 function renderAll(){
   renderOverview();
