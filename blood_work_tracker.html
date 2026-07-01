@@ -54,7 +54,7 @@ h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
 .tab.active { background: var(--color-bg-secondary); border-color: var(--color-border-secondary); color: var(--color-text); font-weight: 500; }
 .panel { display: none; }
 .panel.active { display: block; }
-.summary-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 22px; }
+.summary-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 22px; }
 .stat-card { background: var(--color-bg-secondary); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--color-border); }
 .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
 .stat-val { font-size: 22px; font-weight: 600; }
@@ -139,6 +139,7 @@ textarea { height: auto; padding: 8px 10px; }
   <button class="tab" onclick="switchTab('vitamins')">Vitamins & minerals</button>
   <button class="tab" onclick="switchTab('history')">History</button>
   <button class="tab" onclick="switchTab('add')">+ Add</button>
+  <button class="tab" onclick="switchTab('references')">⚙ Ranges</button>
 </div>
 
 <div id="panel-overview" class="panel active"><div id="ov"></div></div>
@@ -149,6 +150,8 @@ textarea { height: auto; padding: 8px 10px; }
 <div id="panel-thyroid" class="panel"><div id="sec-thyroid"></div></div>
 <div id="panel-vitamins" class="panel"><div id="sec-vitamins"></div></div>
 <div id="panel-history" class="panel"><div id="hc"></div></div>
+
+<div id="panel-references" class="panel"><div id="ref-container"></div></div>
 
 <div id="panel-add" class="panel">
   <div class="add-form">
@@ -183,17 +186,23 @@ textarea { height: auto; padding: 8px 10px; }
     </div>
   </div>
 
-  <div style="font-size:14px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;">Or paste raw lab values — AI will parse them</div>
-  <div class="paste-area">
-    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;">Paste any format (requires internet connection for AI parsing):</div>
-    <textarea id="paste-in" style="width:100%;height:130px;resize:vertical;" placeholder="e.g.&#10;TSH 1.8 (0.4-4.0)&#10;Vitamin D 42 ng/mL&#10;Ferritin 12&#10;WBC 5.6 K/uL"></textarea>
-    <div style="margin-top:10px;display:flex;gap:10px;align-items:center;">
-      <button class="btn btn-p" onclick="parsePaste()">Parse with AI ↗</button>
-      <span id="parse-msg" style="font-size:13px;color:var(--color-success-text);display:none;"></span>
+  <div style="margin-top:20px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius);padding:18px;">
+    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">💡 Faster option: let Claude fill this in for you</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:12px;">
+      Instead of entering values manually, you can upload this tracker file to Claude along with screenshots of your lab report, and ask Claude to fill in the values for you.
+    </div>
+    <ol style="font-size:13px;color:var(--color-text-secondary);line-height:2;padding-left:18px;margin-bottom:12px;">
+      <li>Go to <strong>claude.ai</strong> and start a new conversation</li>
+      <li>Upload this <strong>HTML file</strong> and your <strong>lab report screenshots</strong> in the same message</li>
+      <li>Ask Claude: <em style="color:var(--color-text);">"Please fill in this blood work tracker with the values from my lab report screenshots and return the updated file."</em></li>
+      <li>Download the file Claude returns and open it in your browser</li>
+    </ol>
+    <div style="font-size:12px;color:var(--color-text-tertiary);border-top:1px solid var(--color-border);padding-top:10px;margin-top:4px;">
+      Claude can read most lab report formats and will match values to the correct markers automatically. It will also extract reference ranges from your report and use those instead of the NBME defaults where available.
     </div>
   </div>
 
-  <div style="margin-top:20px;padding:14px 16px;background:var(--color-bg-secondary);border-radius:var(--radius);border:1px solid var(--color-border);">
+  <div style="margin-top:16px;padding:14px 16px;background:var(--color-bg-secondary);border-radius:var(--radius);border:1px solid var(--color-border);">
     <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Export / import data</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-s" onclick="exportData()">⬇ Export JSON</button>
@@ -208,100 +217,100 @@ textarea { height: auto; padding: 8px 10px; }
 <script>
 const PANELS={
   cbc:{label:'CBC',color:'#3266ad',sub:[
-    {key:'wbc',name:'WBC',unit:'K/μL',low:4.0,high:11.0},
-    {key:'rbc',name:'RBC',unit:'M/μL',low:4.0,high:6.0},
-    {key:'hgb',name:'Hemoglobin',unit:'g/dL',low:11.7,high:15.5},
-    {key:'hct',name:'Hematocrit',unit:'%',low:35.0,high:45.0},
+    {key:'wbc',name:'WBC',unit:'K/μL',low:4.5,high:11.0},
+    {key:'rbc',name:'RBC',unit:'M/μL',low:4.3,high:5.9},
+    {key:'hgb',name:'Hemoglobin',unit:'g/dL',low:13.5,high:17.5},
+    {key:'hct',name:'Hematocrit',unit:'%',low:41.0,high:53.0},
     {key:'mcv',name:'MCV',unit:'fL',low:80.0,high:100.0},
-    {key:'mch',name:'MCH',unit:'pg',low:27.0,high:33.0},
+    {key:'mch',name:'MCH',unit:'pg',low:25.0,high:35.0},
     {key:'mchc',name:'MCHC',unit:'g/dL',low:31.0,high:36.0},
-    {key:'rdw',name:'RDW',unit:'%',low:11.0,high:15.0},
-    {key:'plt',name:'Platelets',unit:'K/μL',low:150,high:420},
-    {key:'mpv',name:'MPV',unit:'fL',low:8.0,high:12.0},
-    {key:'neut_abs',name:'Neutrophils absolute',unit:'K/μL',low:2.0,high:7.6},
-    {key:'lymph_abs',name:'Lymphocytes absolute',unit:'K/μL',low:0.68,high:3.70},
-    {key:'mono_abs',name:'Monocytes absolute',unit:'K/μL',low:0.0,high:1.0},
-    {key:'eos_abs',name:'Eosinophils absolute',unit:'K/μL',low:0.0,high:1.0},
-    {key:'baso_abs',name:'Basophils absolute',unit:'K/μL',low:0.0,high:0.1},
-    {key:'neutrophils',name:'Neutrophils %',unit:'%',low:39,high:72},
-    {key:'lymphocytes',name:'Lymphocytes %',unit:'%',low:17,high:50},
-    {key:'monocytes',name:'Monocytes %',unit:'%',low:4,high:12},
-    {key:'eosinophils',name:'Eosinophils %',unit:'%',low:0,high:5},
-    {key:'basophils',name:'Basophils %',unit:'%',low:0,high:1.4},
+    {key:'rdw',name:'RDW',unit:'%'},
+    {key:'plt',name:'Platelets',unit:'K/μL',low:150,high:400},
+    {key:'mpv',name:'MPV',unit:'fL'},
+    {key:'neut_abs',name:'Neutrophils absolute',unit:'K/μL'},
+    {key:'lymph_abs',name:'Lymphocytes absolute',unit:'K/μL'},
+    {key:'mono_abs',name:'Monocytes absolute',unit:'K/μL'},
+    {key:'eos_abs',name:'Eosinophils absolute',unit:'K/μL'},
+    {key:'baso_abs',name:'Basophils absolute',unit:'K/μL'},
+    {key:'neutrophils',name:'Neutrophils %',unit:'%',low:54,high:62},
+    {key:'lymphocytes',name:'Lymphocytes %',unit:'%',low:25,high:33},
+    {key:'monocytes',name:'Monocytes %',unit:'%',low:3,high:7},
+    {key:'eosinophils',name:'Eosinophils %',unit:'%',low:1,high:3},
+    {key:'basophils',name:'Basophils %',unit:'%',low:0,high:0.75},
   ]},
   metabolic:{label:'Metabolic',color:'#1D9E75',sub:[
-    {key:'glucose',name:'Glucose',unit:'mg/dL',low:65,high:99},
-    {key:'bun',name:'BUN',unit:'mg/dL',low:7,high:25},
-    {key:'creatinine',name:'Creatinine',unit:'mg/dL',low:0.50,high:0.96},
-    {key:'egfr',name:'eGFR',unit:'mL/min/1.73m²',low:60,high:9999},
-    {key:'anion_gap',name:'Anion gap',unit:'mmol/L',low:8,high:19},
-    {key:'sodium',name:'Sodium',unit:'mmol/L',low:135,high:146},
-    {key:'potassium',name:'Potassium',unit:'mmol/L',low:3.5,high:5.3},
-    {key:'chloride',name:'Chloride',unit:'mmol/L',low:98,high:110},
-    {key:'co2',name:'CO₂',unit:'mmol/L',low:20,high:32},
-    {key:'calcium',name:'Calcium',unit:'mg/dL',low:8.6,high:10.2},
-    {key:'protein',name:'Protein total',unit:'g/dL',low:6.1,high:8.1},
-    {key:'albumin',name:'Albumin',unit:'g/dL',low:3.6,high:5.1},
-    {key:'globulin',name:'Globulin',unit:'g/dL',low:1.5,high:4.5},
-    {key:'ag_ratio',name:'A/G ratio',unit:'',low:1.2,high:2.2},
-    {key:'bilirubin',name:'Bilirubin total',unit:'mg/dL',low:0.2,high:1.2},
-    {key:'alp',name:'Alkaline phosphatase',unit:'IU/L',low:31,high:125},
-    {key:'ast',name:'AST',unit:'IU/L',low:10,high:30},
-    {key:'alt',name:'ALT',unit:'IU/L',low:6,high:29},
-    {key:'hba1c',name:'Hemoglobin A1c',unit:'%',low:0,high:5.7},
-    {key:'crp',name:'CRP cardiac',unit:'mg/L',low:0,high:3.0},
+    {key:'glucose',name:'Glucose',unit:'mg/dL',low:70,high:100},
+    {key:'bun',name:'BUN',unit:'mg/dL',low:7,high:18},
+    {key:'creatinine',name:'Creatinine',unit:'mg/dL',low:0.6,high:1.2},
+    {key:'egfr',name:'eGFR',unit:'mL/min/1.73m²'},
+    {key:'anion_gap',name:'Anion gap',unit:'mmol/L'},
+    {key:'sodium',name:'Sodium',unit:'mEq/L',low:136,high:146},
+    {key:'potassium',name:'Potassium',unit:'mEq/L',low:3.5,high:5.0},
+    {key:'chloride',name:'Chloride',unit:'mEq/L',low:95,high:105},
+    {key:'co2',name:'Bicarbonate',unit:'mEq/L',low:22,high:28},
+    {key:'calcium',name:'Calcium',unit:'mg/dL',low:8.4,high:10.2},
+    {key:'protein',name:'Protein total',unit:'g/dL',low:6.0,high:7.8},
+    {key:'albumin',name:'Albumin',unit:'g/dL',low:3.5,high:5.5},
+    {key:'globulin',name:'Globulin',unit:'g/dL',low:2.3,high:3.5},
+    {key:'ag_ratio',name:'A/G ratio',unit:''},
+    {key:'bilirubin',name:'Bilirubin total',unit:'mg/dL',low:0.1,high:1.0},
+    {key:'alp',name:'Alkaline phosphatase',unit:'U/L',low:25,high:100},
+    {key:'ast',name:'AST',unit:'U/L',low:12,high:38},
+    {key:'alt',name:'ALT',unit:'U/L',low:10,high:40},
+    {key:'hba1c',name:'Hemoglobin A1c',unit:'%',low:0,high:6.0},
+    {key:'crp',name:'CRP cardiac',unit:'mg/L'},
   ]},
   lipids:{label:'Lipids',color:'#D85A30',sub:[
     {key:'total_chol',name:'Total cholesterol',unit:'mg/dL',low:0,high:200},
-    {key:'ldl',name:'LDL',unit:'mg/dL',low:0,high:100},
-    {key:'hdl',name:'HDL',unit:'mg/dL',low:50,high:9999},
+    {key:'ldl',name:'LDL',unit:'mg/dL',low:0,high:160},
+    {key:'hdl',name:'HDL',unit:'mg/dL',low:40,high:60},
     {key:'trig',name:'Triglycerides',unit:'mg/dL',low:0,high:150},
-    {key:'non_hdl',name:'Non-HDL chol',unit:'mg/dL',low:0,high:130},
-    {key:'vldl',name:'VLDL',unit:'mg/dL',low:2,high:30},
+    {key:'non_hdl',name:'Non-HDL chol',unit:'mg/dL'},
+    {key:'vldl',name:'VLDL',unit:'mg/dL'},
   ]},
   hormones:{label:'Hormones',color:'#7F77DD',sub:[
-    {key:'testosterone',name:'Testosterone total',unit:'ng/dL',low:2,high:45},
-    {key:'free_test',name:'Free testosterone',unit:'pg/mL',low:0.1,high:6.4},
-    {key:'shbg',name:'SHBG',unit:'nmol/L',low:17,high:124},
-    {key:'dhea_s',name:'DHEA-S',unit:'mcg/dL',low:14,high:349},
-    {key:'dhea_serum',name:'DHEA serum',unit:'ng/dL',low:31,high:701},
-    {key:'estradiol',name:'Estradiol',unit:'pg/mL',low:19,high:144},
-    {key:'progesterone',name:'Progesterone',unit:'ng/mL',low:0,high:1.0},
-    {key:'cortisol',name:'Cortisol AM',unit:'mcg/dL',low:6,high:23},
-    {key:'cortisol_urine',name:'Urinary free cortisol',unit:'mcg/24hr',low:6,high:42},
-    {key:'acth',name:'ACTH plasma',unit:'pg/mL',low:6,high:50},
-    {key:'prolactin',name:'Prolactin',unit:'ng/mL',low:3.0,high:30.0},
-    {key:'lh',name:'LH',unit:'mIU/mL',low:1.7,high:8.6},
-    {key:'fsh',name:'FSH',unit:'mIU/mL',low:2.5,high:10.2},
-    {key:'insulin',name:'Insulin fasting',unit:'μIU/mL',low:2,high:19},
-    {key:'igf1',name:'IGF-1',unit:'ng/mL',low:88,high:246},
-    {key:'ohp17',name:'17-Alpha-Hydroxyprogesterone',unit:'ng/dL',low:15,high:70},
-    {key:'pregnenolone17',name:'17-OH Pregnenolone',unit:'ng/dL',low:53,high:357},
+    {key:'testosterone',name:'Testosterone total',unit:'ng/dL'},
+    {key:'free_test',name:'Free testosterone',unit:'pg/mL'},
+    {key:'shbg',name:'SHBG',unit:'nmol/L'},
+    {key:'dhea_s',name:'DHEA-S',unit:'mcg/dL'},
+    {key:'dhea_serum',name:'DHEA serum',unit:'ng/dL'},
+    {key:'estradiol',name:'Estradiol',unit:'pg/mL'},
+    {key:'progesterone',name:'Progesterone',unit:'ng/mL'},
+    {key:'cortisol',name:'Cortisol AM',unit:'μg/dL',low:5,high:23},
+    {key:'cortisol_urine',name:'Urinary free cortisol',unit:'mcg/24hr'},
+    {key:'acth',name:'ACTH plasma',unit:'pg/mL'},
+    {key:'prolactin',name:'Prolactin',unit:'ng/mL',low:0,high:17},
+    {key:'lh',name:'LH',unit:'mIU/mL',low:6,high:23},
+    {key:'fsh',name:'FSH',unit:'mIU/mL',low:4,high:25},
+    {key:'insulin',name:'Insulin fasting',unit:'μIU/mL'},
+    {key:'igf1',name:'IGF-1',unit:'ng/mL'},
+    {key:'ohp17',name:'17-Alpha-Hydroxyprogesterone',unit:'ng/dL'},
+    {key:'pregnenolone17',name:'17-OH Pregnenolone',unit:'ng/dL'},
   ]},
   thyroid:{label:'Thyroid',color:'#D4537E',sub:[
-    {key:'tsh',name:'TSH',unit:'mIU/L',low:0.40,high:4.50},
-    {key:'free_t4',name:'Free T4',unit:'ng/dL',low:0.8,high:1.4},
-    {key:'free_t3',name:'Free T3',unit:'pg/mL',low:3.0,high:4.7},
-    {key:'total_t4',name:'Total T4',unit:'mcg/dL',low:5.1,high:11.9},
-    {key:'t3_uptake',name:'T3 uptake',unit:'%',low:22,high:35},
-    {key:'free_t4_idx',name:'Free T4 index (T7)',unit:'',low:1.4,high:3.8},
-    {key:'total_t3',name:'Total T3',unit:'ng/dL',low:80,high:200},
-    {key:'tpo_ab',name:'TPO antibodies',unit:'IU/mL',low:0,high:34},
-    {key:'tg_ab',name:'Thyroglobulin Ab',unit:'IU/mL',low:0,high:0.9},
-    {key:'rt3',name:'Reverse T3',unit:'ng/dL',low:9.2,high:24.1},
+    {key:'tsh',name:'TSH',unit:'μU/mL',low:0.4,high:4.0},
+    {key:'free_t4',name:'Free T4',unit:'ng/dL',low:0.9,high:1.7},
+    {key:'free_t3',name:'Free T3',unit:'pg/mL'},
+    {key:'total_t4',name:'Total T4',unit:'μg/dL',low:5.0,high:12.0},
+    {key:'t3_uptake',name:'T3 uptake',unit:'%',low:25,high:35},
+    {key:'free_t4_idx',name:'Free T4 index (T7)',unit:''},
+    {key:'total_t3',name:'Total T3',unit:'ng/dL',low:100,high:200},
+    {key:'tpo_ab',name:'TPO antibodies',unit:'IU/mL'},
+    {key:'tg_ab',name:'Thyroglobulin Ab',unit:'IU/mL'},
+    {key:'rt3',name:'Reverse T3',unit:'ng/dL'},
   ]},
   vitamins:{label:'Vitamins & minerals',color:'#BA7517',sub:[
-    {key:'vit_d',name:'Vitamin D (25-OH)',unit:'ng/mL',low:30,high:100},
-    {key:'vit_b12',name:'Vitamin B12',unit:'pg/mL',low:200,high:1100},
-    {key:'folate',name:'Folate',unit:'ng/mL',low:3.4,high:20},
-    {key:'ferritin',name:'Ferritin',unit:'ng/mL',low:16,high:154},
-    {key:'iron',name:'Iron total',unit:'mcg/dL',low:40,high:190},
-    {key:'tibc',name:'Iron binding capacity',unit:'mcg/dL',low:250,high:450},
-    {key:'iron_sat',name:'Iron saturation',unit:'%',low:16,high:45},
-    {key:'magnesium',name:'Magnesium',unit:'mg/dL',low:1.7,high:2.2},
-    {key:'zinc',name:'Zinc',unit:'μg/dL',low:60,high:120},
-    {key:'homocysteine',name:'Homocysteine',unit:'μmol/L',low:0,high:15},
-    {key:'uric_acid',name:'Uric acid',unit:'mg/dL',low:3.5,high:7.2},
+    {key:'vit_d',name:'Vitamin D (25-OH)',unit:'ng/mL'},
+    {key:'vit_b12',name:'Vitamin B12',unit:'pg/mL'},
+    {key:'folate',name:'Folate',unit:'ng/mL'},
+    {key:'ferritin',name:'Ferritin',unit:'ng/mL',low:20,high:250},
+    {key:'iron',name:'Iron',unit:'μg/dL',low:65,high:175},
+    {key:'tibc',name:'TIBC',unit:'μg/dL',low:250,high:400},
+    {key:'iron_sat',name:'Iron saturation',unit:'%'},
+    {key:'magnesium',name:'Magnesium',unit:'mg/dL',low:1.5,high:2.0},
+    {key:'zinc',name:'Zinc',unit:'μg/dL'},
+    {key:'homocysteine',name:'Homocysteine',unit:'μmol/L'},
+    {key:'uric_acid',name:'Uric acid',unit:'mg/dL',low:3.0,high:8.2},
   ]}
 };
 
@@ -395,15 +404,85 @@ const DESCRIPTIONS={
   uric_acid:"A waste product of purine metabolism. Elevated levels cause gout and are associated with metabolic syndrome and kidney stones.",
 };
 
-const SK = 'bloodwork_v1';
+const SK = 'bloodwork_tracker_v1';
+const SK_RANGES = 'bloodwork_tracker_ranges_v1';
 const CH = {};
 let data = [];
+
+// activeRanges: {key: {low, high, source, sourceLabel}}
+// source = 'nbme_default' | 'lab_result' | 'manual'
+let activeRanges = {};
+
+// Capture Quest defaults from PANELS at startup (before any overrides)
+const NBME_DEFAULTS = {}; // Source: NBME Laboratory Reference Values (published)
+function captureQuestDefaults(){  // populates NBME_DEFAULTS
+  Object.values(PANELS).forEach(p=>p.sub.forEach(m=>{
+    NBME_DEFAULTS[m.key]={low:m.low,high:m.high};
+  }));
+}
+
+// Apply activeRanges into PANELS/ALL so cards/flags use them
+function applyActiveRanges(){
+  Object.entries(activeRanges).forEach(([key,r])=>{
+    if(ALL[key]){ALL[key].low=r.low;ALL[key].high=r.high;}
+    Object.values(PANELS).forEach(p=>p.sub.forEach(m=>{if(m.key===key){m.low=r.low;m.high=r.high;}}));
+  });
+}
+
+function persistRanges(){ try{ localStorage.setItem(SK_RANGES, JSON.stringify(activeRanges)); } catch(e){} }
+
+function loadActiveRanges(){
+  try{
+    const saved=localStorage.getItem(SK_RANGES);
+    activeRanges=saved?JSON.parse(saved):{};
+  }catch(e){ activeRanges={}; }
+  // If we have data, sync active ranges from the most recent entry
+  // (only for keys not already manually set)
+  syncRangesFromLastEntry();
+  applyActiveRanges();
+}
+
+// Update activeRanges from the most recent data entry's stored ranges.
+// Manual edits take priority; lab_result and quest_default are overwritten.
+function syncRangesFromLastEntry(){
+  if(!data.length)return;
+  const last=data[data.length-1];
+  if(!last.ranges)return;
+  Object.entries(last.ranges).forEach(([k,r])=>{
+    const cur=activeRanges[k];
+    if(!cur||cur.source!=='manual'){
+      activeRanges[k]={low:r.low,high:r.high,
+        source:'lab_result',
+        sourceLabel:(last.lab||'Lab')+' · '+fmtDateSimple(last.date)};
+    }
+  });
+}
+
+function fmtDateSimple(d){
+  try{const [y,m,day]=d.split('-');return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]+' '+parseInt(day)+', '+y;}catch(e){return d;}
+}
+
+// Called after saving/importing any entry — re-syncs from last entry
+function promoteEntryRanges(entry){
+  if(!entry||!entry.ranges)return;
+  Object.entries(entry.ranges).forEach(([k,r])=>{
+    const cur=activeRanges[k];
+    if(!cur||cur.source!=='manual'){
+      activeRanges[k]={low:r.low,high:r.high,
+        source:'lab_result',
+        sourceLabel:(entry.lab||'Lab')+' · '+fmtDateSimple(entry.date)};
+    }
+  });
+  persistRanges();applyActiveRanges();
+}
+
 
 function load(){
   try{
     const saved = localStorage.getItem(SK);
     data = saved ? JSON.parse(saved) : [];
   } catch(e){ data = []; }
+  loadActiveRanges();
   renderAll();
 }
 function persist(){ try{ localStorage.setItem(SK, JSON.stringify(data)); } catch(e){} }
@@ -415,11 +494,15 @@ function st(key,val){
   return 'ok';
 }
 function switchTab(n){
-  const ns=['overview','cbc','metabolic','lipids','hormones','thyroid','vitamins','history','add'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ns[i]===n));
+  document.querySelectorAll('.tab').forEach(t=>{
+    const onclick=t.getAttribute('onclick')||'';
+    const match=onclick.match(/switchTab\('([^']+)'\)/);
+    t.classList.toggle('active',match&&match[1]===n);
+  });
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+n).classList.add('active');
-  renderAll();
+  if(n==='references') renderReferences();
+  else renderAll();
 }
 function fmtNum(v){return v<0.01?v.toFixed(3):v<1?v.toFixed(2):v<10?parseFloat(v.toFixed(2)):parseFloat(v.toFixed(1));}
 function fmtLabel(v){return v===0?'0':v<1?v.toFixed(2):v<10?v.toFixed(1):String(v);}
@@ -429,18 +512,47 @@ function fmtDate(d){
   return months[parseInt(m)-1]+' '+parseInt(day)+', '+y;
 }
 
-function rangeBar(m,val){
-  const noUp=m.high>=9000;
-  const lo=m.low,hi=noUp?val*1.6:m.high;
+function rangeBarPt(rng,key,val){
+  const noUp=rng.high>=9000;
+  const lo=rng.low,hi=noUp?val*1.6:rng.high;
   const span=Math.max(hi-lo,0.0001);
   const vMin=Math.min(val,lo)-span*0.12,vMax=Math.max(val,hi)+span*0.12,vspan=vMax-vMin;
   const pct=v=>Math.max(0,Math.min(100,((v-vMin)/vspan)*100)).toFixed(1);
   const bL=pct(lo),bW=noUp?(100-parseFloat(bL)).toFixed(1):(pct(hi)-parseFloat(bL)).toFixed(1);
-  const mc=st(m.key,val)==='hi'?'#e53935':st(m.key,val)==='lo'?'#fb8c00':'#1D9E74';
-  return `<div class="range-wrap"><div class="range-track"><div class="range-fill" style="left:${bL}%;width:${bW}%"></div><div class="range-pin" style="left:${pct(val)}%;background:${mc}"></div></div><div class="range-lbls"><span>${fmtLabel(m.low)}</span><span>${noUp?'≥'+fmtLabel(m.low)+' normal':fmtLabel(m.high)}</span></div></div>`;
+  const s=stPt(key,val,rng);
+  const mc=s==='hi'?'#e53935':s==='lo'?'#fb8c00':'#1D9E74';
+  return `<div class="range-wrap"><div class="range-track"><div class="range-fill" style="left:${bL}%;width:${bW}%"></div><div class="range-pin" style="left:${pct(val)}%;background:${mc}"></div></div><div class="range-lbls"><span>${fmtLabel(rng.low)}</span><span>${noUp?'≥'+fmtLabel(rng.low)+' normal':fmtLabel(rng.high)}</span></div></div>`;
 }
+function rangeBar(m,val){return rangeBarPt({low:m.low,high:m.high},m.key,val);}
 
-function getPts(key){const r=[];data.forEach(e=>{if(e.values[key]!==undefined)r.push({d:e.date,lab:e.lab||'',v:e.values[key]});});return r;}
+
+function hasRange(m){ return m && m.low !== undefined && m.high !== undefined; }
+
+function getPts(key){
+  const r=[];
+  data.forEach(e=>{
+    if(e.values[key]!==undefined){
+      const entryRng=e.ranges&&e.ranges[key];
+      // Only attach a range if the entry stored one OR the PANELS marker has one
+      const panelM=ALL[key];
+      let rng=null;
+      if(entryRng&&entryRng.low!==undefined&&entryRng.high!==undefined){
+        rng={low:entryRng.low,high:entryRng.high};
+      } else if(panelM&&panelM.low!==undefined&&panelM.high!==undefined){
+        rng={low:panelM.low,high:panelM.high};
+      }
+      r.push({d:e.date,lab:e.lab||'',v:e.values[key],low:rng?rng.low:undefined,high:rng?rng.high:undefined});
+    }
+  });
+  return r;
+}
+// Status using a specific range object {low,high} instead of global ALL
+function stPt(key,val,rng){
+  if(!rng||rng.low===undefined||rng.high===undefined)return 'ok';
+  if(val<rng.low)return 'lo';
+  if(rng.high<9000&&val>rng.high)return 'hi';
+  return 'ok';
+}
 
 function deltaStr(pts){
   if(pts.length<2)return '';
@@ -453,41 +565,108 @@ function deltaStr(pts){
 
 function makeCard(m,pArr,color,containerId){
   const lat=pArr[pArr.length-1];
-  const s=st(m.key,lat.v);
+  const hasRng=lat.low!==undefined&&lat.high!==undefined;
+  const latRng=hasRng?{low:lat.low,high:lat.high}:null;
+  const s=hasRng?stPt(m.key,lat.v,latRng):'ok';
   const nc=s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)';
   const bc=s==='ok'?'badge-ok':s==='hi'?'badge-hi':'badge-lo';
-  const bt=s==='ok'?'Normal':s==='hi'?'↑ High':'↓ Low';
+  const bt=!hasRng?'No ref range':s==='ok'?'Normal':s==='hi'?'\u2191 High':'\u2193 Low';
+  const badgeStyle=!hasRng?'badge" style="background:var(--color-bg-secondary);color:var(--color-text-tertiary);font-weight:400;':bc+'"';
   const cid='cv-'+m.key+'-'+containerId;
   const card=document.createElement('div');
   card.className='card'+(s==='hi'?' flag-high':s==='lo'?' flag-low':'');
-  const hiL=m.high>=9000?'∞':fmtLabel(m.high);
-  card.innerHTML=`
-    <div class="card-header"><div class="card-name">${m.name}</div><div class="card-unit">${m.unit}</div></div>
-    <div class="card-date">Collected: ${fmtDate(lat.d)}${lat.lab?' · '+lat.lab:''}</div>
-    <div class="card-range">Ref: ${fmtLabel(m.low)} – ${hiL}${m.unit?' '+m.unit:''}</div>
-    <div class="val-row"><span class="val-num" style="color:${nc}">${fmtNum(lat.v)}</span><span class="badge ${bc}">${bt}</span></div>
-    ${rangeBar(m,lat.v)}
-    ${deltaStr(pArr)}
-    ${pArr.length>1?`<div class="chart-wrap"><canvas id="${cid}"></canvas></div>`:'<div class="no-trend">One data point — add more for trend</div>'}
-    ${DESCRIPTIONS[m.key]?`<div class="card-desc">${DESCRIPTIONS[m.key]}</div>`:''}`;
+
+  const hiL=hasRng?(lat.high>=9000?'\u221e':fmtLabel(lat.high)):'';
+  const rangeText=hasRng?'Ref: '+fmtLabel(lat.low)+' \u2013 '+hiL+(m.unit?' '+m.unit:''):'No reference range set';
+  const rangesVary=hasRng&&pArr.length>1&&pArr.some(p=>p.low!==lat.low||p.high!==lat.high);
+  const rangeNote=rangesVary?' <span style="font-size:10px;color:var(--color-text-tertiary);">(varies by lab)</span>':'';
+
+  const pastFlags=pArr.slice(0,-1).filter(p=>{
+    const ps=stPt(m.key,p.v,{low:p.low,high:p.high});
+    return ps!=='ok';
+  });
+  const pastFlagNote=pastFlags.length>0&&s==='ok'&&hasRng
+    ?'<div style="font-size:10px;color:var(--color-text-tertiary);margin-top:3px;">\u25cf Out of range in '+pastFlags.length+' prior result'+(pastFlags.length>1?'s':'')+'</div>'
+    :'';
+
+  card.innerHTML=
+    '<div class="card-header"><div class="card-name">'+m.name+'</div><div class="card-unit">'+m.unit+'</div></div>'+
+    '<div class="card-date">Collected: '+fmtDate(lat.d)+(lat.lab?' \u00b7 '+lat.lab:'')+'</div>'+
+    '<div class="card-range" style="'+(hasRng?'':'color:var(--color-text-tertiary);font-style:italic;')+'">'+rangeText+rangeNote+'</div>'+
+    '<div class="val-row"><span class="val-num" style="color:'+nc+'">'+fmtNum(lat.v)+'</span><span class="badge '+badgeStyle+'>'+bt+'</span></div>'+
+    (hasRng?rangeBarPt(latRng,m.key,lat.v):'')+
+    pastFlagNote+
+    deltaStr(pArr)+
+    (pArr.length>1?'<div class="chart-wrap"><canvas id="'+cid+'"></canvas></div>':'<div class="no-trend">One data point \u2014 add more for trend</div>')+
+    (DESCRIPTIONS[m.key]?'<div class="card-desc">'+DESCRIPTIONS[m.key]+'</div>':'');
+
   document.getElementById(containerId).appendChild(card);
   if(pArr.length>1){
     requestAnimationFrame(()=>{
       if(CH[cid])CH[cid].destroy();
       const ctx=document.getElementById(cid);if(!ctx)return;
+      // Build per-point low/high datasets — group into segments where range changes
+      // We draw separate stepped reference line datasets for low and high
+      const loData=pArr.map(p=>p.low);
+      const hiData=pArr.map(p=>p.high<9000?p.high:null);
+      const rangesVaryChart=pArr.some((p,i)=>i>0&&(p.low!==pArr[i-1].low||p.high!==pArr[i-1].high));
       CH[cid]=new Chart(ctx,{
         type:'line',
         data:{
           labels:pArr.map(p=>fmtDate(p.d)),
           datasets:[
-            {data:pArr.map(p=>p.v),borderColor:color,backgroundColor:color+'18',borderWidth:2,pointRadius:4,pointBackgroundColor:color,tension:0.35,fill:true},
-            {data:pArr.map(()=>m.low),borderColor:'#BA751750',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false},
-            ...(m.high<9000?[{data:pArr.map(()=>m.high),borderColor:'#E24B4A50',borderDash:[4,3],borderWidth:1.5,pointRadius:0,fill:false}]:[])
+            {
+              label:'Value',
+              data:pArr.map(p=>p.v),
+              borderColor:color,backgroundColor:color+'18',borderWidth:2,
+              pointRadius:4,pointBackgroundColor:pArr.map(p=>{
+                const ps=stPt(m.key,p.v,{low:p.low,high:p.high});
+                return ps==='hi'?'#e53935':ps==='lo'?'#fb8c00':color;
+              }),
+              tension:0.35,fill:true,
+              pointBorderColor:'transparent',
+              order:1
+            },
+            {
+              label:'Low',
+              data:loData,
+              borderColor:'#E24B4A70',
+              borderDash:[4,3],borderWidth:1.5,
+              pointRadius:rangesVaryChart?2:0,
+              pointBackgroundColor:'#E24B4A',
+              stepped:rangesVaryChart?'before':false,
+              fill:false,order:2
+            },
+            ...(hiData.some(v=>v!==null)?[{
+              label:'High',
+              data:hiData,
+              borderColor:'#E24B4A70',
+              borderDash:[4,3],borderWidth:1.5,
+              pointRadius:rangesVaryChart?2:0,
+              pointBackgroundColor:'#E24B4A',
+              stepped:rangesVaryChart?'before':false,
+              fill:false,order:3
+            }]:[])
           ]
         },
         options:{
           responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>[i[0].label],label:i=>i.datasetIndex===0?i.raw+' '+m.unit:null}}},
+          plugins:{
+            legend:{display:false},
+            tooltip:{callbacks:{
+              title:i=>[i[0].label],
+              label:i=>{
+                if(i.datasetIndex===0){
+                  const p=pArr[i.dataIndex];
+                  const ps=stPt(m.key,p.v,{low:p.low,high:p.high});
+                  return `${i.raw} ${m.unit} (ref: ${fmtLabel(p.low)}–${p.high>=9000?'∞':fmtLabel(p.high)}) ${ps==='hi'?'↑':ps==='lo'?'↓':'✓'}`;
+                }
+                if(i.datasetIndex===1)return `Low: ${i.raw}`;
+                if(i.datasetIndex===2)return `High: ${i.raw}`;
+                return null;
+              }
+            }}
+          },
           scales:{
             x:{ticks:{font:{size:9},color:'#888',maxRotation:30,autoSkip:true,maxTicksLimit:8},grid:{display:false}},
             y:{ticks:{font:{size:9},color:'#888',maxTicksLimit:4},grid:{color:'rgba(128,128,128,0.1)'}}
@@ -512,7 +691,12 @@ function renderOverview(){
   let total=0,flags=[];
   if(data.length){
     const last=data[data.length-1];
-    Object.entries(last.values).forEach(([k,v])=>{const s=st(k,v);if(s!=='ok'&&ALL[k])flags.push({m:ALL[k],v,s});});
+    Object.entries(last.values).forEach(([k,v])=>{
+      const rng=last.ranges&&last.ranges[k]&&last.ranges[k].low!==undefined?last.ranges[k]:(ALL[k]&&ALL[k].low!==undefined?ALL[k]:null);
+      if(!rng)return;
+      const s=stPt(k,v,rng);
+      if(s!=='ok'&&ALL[k])flags.push({m:ALL[k],v,s});
+    });
   }
   Object.keys(ALL).forEach(k=>{if(getPts(k).length>0)total++;});
   const totalMeasurements=data.reduce((sum,e)=>sum+Object.keys(e.values).length,0);
@@ -520,15 +704,18 @@ function renderOverview(){
   document.getElementById('subtitle').textContent=data.length?'Last test: '+fmtDate(lastDate)+(data[data.length-1].lab?' · '+data[data.length-1].lab:''):'No data yet — go to + Add to enter your first results';
 
   if(!data.length){
-    c.innerHTML=`<div class="no-data" style="padding:50px 20px;max-width:480px;margin:0 auto;text-align:center;">
+    c.innerHTML=`<div class="no-data" style="padding:50px 20px;max-width:520px;margin:0 auto;text-align:center;">
       <div style="font-size:36px;margin-bottom:14px;">🩺</div>
       <div style="font-size:17px;font-weight:600;margin-bottom:8px;">Welcome to your Blood Work Tracker</div>
-      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:22px;line-height:1.7;">
-        No results yet. You can add data two ways:
+      <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:6px;line-height:1.7;">
+        No results yet. Add data two ways:
         <br><br>
-        <strong>Paste raw lab text</strong> — copy your results straight from your lab portal or PDF and click <em>Parse with AI</em> to auto-fill everything.
+        <strong>Let Claude fill it in</strong> — upload this HTML file and your lab report screenshots to <a href="https://claude.ai" target="_blank" style="color:#2563eb;">claude.ai</a> and ask Claude to populate the tracker for you.
         <br><br>
-        <strong>Enter manually</strong> — pick a panel (CBC, Metabolic, Lipids…) and type in each value.
+        <strong>Enter manually</strong> — go to <strong>+ Add</strong>, pick a panel (CBC, Metabolic, Lipids…), and type in each value.
+      </div>
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:22px;line-height:1.6;padding:10px 14px;background:var(--color-bg-secondary);border-radius:8px;text-align:left;">
+        Once you have results, out-of-range values are flagged here based on the reference ranges from your most recent lab test.
       </div>
       <button class="btn btn-p" onclick="switchTab('add')" style="height:40px;padding:0 24px;font-size:14px;">+ Add your first results</button>
     </div>`;
@@ -536,18 +723,37 @@ function renderOverview(){
   }
 
   const sb=document.createElement('div');sb.className='summary-bar';
-  sb.innerHTML=`
-    <div class="stat-card"><div class="stat-label">Lab entries</div><div class="stat-val">${data.length}</div><div class="stat-sub">total tests</div></div>
-    <div class="stat-card"><div class="stat-label">Markers tracked</div><div class="stat-val">${total}</div><div class="stat-sub">unique markers</div></div>
-    <div class="stat-card"><div class="stat-label">Measurements</div><div class="stat-val">${totalMeasurements}</div><div class="stat-sub">total data points</div></div>
-    <div class="stat-card"><div class="stat-label">Out of range</div><div class="stat-val" style="color:${flags.length?'#e53935':'var(--color-text)'}">${flags.length}</div><div class="stat-sub">latest results</div></div>
-    <div class="stat-card"><div class="stat-label">Date range</div><div class="stat-val" style="font-size:12px;padding-top:4px;">${data.length?fmtDate(data[0].date):''}</div><div class="stat-sub">→ ${fmtDate(lastDate)}</div></div>`;
+  const hiFlags=flags.filter(f=>f.s==='hi');
+  const loFlags=flags.filter(f=>f.s==='lo');
+  sb.innerHTML=
+    '<div class="stat-card"><div class="stat-label">Lab entries</div><div class="stat-val">'+data.length+'</div><div class="stat-sub">total tests</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Markers tracked</div><div class="stat-val">'+total+'</div><div class="stat-sub">unique markers</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Measurements</div><div class="stat-val">'+totalMeasurements+'</div><div class="stat-sub">total data points</div></div>'+
+    '<div class="stat-card" style="'+(hiFlags.length?'border-color:#e53935;background:var(--color-danger-bg);':'')+'">'+
+      '<div class="stat-label" style="'+(hiFlags.length?'color:#e53935;':'')+'">&#8593; High</div>'+
+      '<div class="stat-val" style="color:'+(hiFlags.length?'#e53935':'var(--color-text-secondary)')+'">'+hiFlags.length+'</div>'+
+      '<div class="stat-sub">latest results</div>'+
+    '</div>'+
+    '<div class="stat-card" style="'+(loFlags.length?'border-color:#fb8c00;background:var(--color-warning-bg);':'')+'">'+
+      '<div class="stat-label" style="'+(loFlags.length?'color:#fb8c00;':'')+'">&#8595; Low</div>'+
+      '<div class="stat-val" style="color:'+(loFlags.length?'#fb8c00':'var(--color-text-secondary)')+'">'+loFlags.length+'</div>'+
+      '<div class="stat-sub">latest results</div>'+
+    '</div>'+
+    '<div class="stat-card"><div class="stat-label">Date range</div><div class="stat-val" style="font-size:12px;padding-top:4px;">'+(data.length?fmtDate(data[0].date):'')+'</div><div class="stat-sub">\u2192 '+fmtDate(lastDate)+'</div></div>';
   c.appendChild(sb);
 
   if(flags.length){
     const fb=document.createElement('div');fb.className='flag-box';
-    fb.innerHTML=`<div class="flag-title">⚠ Out of range — ${fmtDate(lastDate)}</div>`
-      +flags.map(({m,v,s})=>`<span class="flag-chip" style="color:${s==='hi'?'#e53935':'#fb8c00'}">${m.name}: ${fmtNum(v)} ${m.unit} (${s==='hi'?'↑ high':'↓ low'})</span>`).join('');
+    let fbHtml='<div class="flag-title">\u26a0 Out of range \u2014 '+fmtDate(lastDate)+(data[data.length-1].lab?' \u00b7 '+data[data.length-1].lab:'')+'</div>';
+    if(hiFlags.length){
+      fbHtml+='<div style="font-size:11px;font-weight:600;color:#e53935;margin:6px 0 4px;">\u2191 HIGH</div>';
+      fbHtml+=hiFlags.map(({m,v})=>'<span class="flag-chip" style="color:#e53935;border:1px solid #f5b7b1;">'+m.name+': <strong>'+fmtNum(v)+'</strong> '+m.unit+' (ref \u2264 '+fmtLabel(m.high)+')</span>').join('');
+    }
+    if(loFlags.length){
+      fbHtml+='<div style="font-size:11px;font-weight:600;color:#fb8c00;margin:6px 0 4px;">\u2193 LOW</div>';
+      fbHtml+=loFlags.map(({m,v})=>'<span class="flag-chip" style="color:#fb8c00;border:1px solid #ffd180;">'+m.name+': <strong>'+fmtNum(v)+'</strong> '+m.unit+' (ref \u2265 '+fmtLabel(m.low)+')</span>').join('');
+    }
+    fb.innerHTML=fbHtml;
     c.appendChild(fb);
   }
 
@@ -565,19 +771,35 @@ function renderHistory(){
   const c=document.getElementById('hc');
   if(!data.length){c.innerHTML='<div class="no-data">No entries yet.</div>';return;}
   const allKeys=[...new Set(data.flatMap(e=>Object.keys(e.values)))];
-  c.innerHTML=`<div style="overflow-x:auto;"><table class="history-table">
-    <thead><tr><th>Date</th><th>Lab</th>${allKeys.map(k=>`<th>${ALL[k]?ALL[k].name:k}<br><span style="font-weight:400;color:var(--color-text-tertiary)">${ALL[k]?ALL[k].unit:''}</span></th>`).join('')}<th></th></tr></thead>
-    <tbody>${[...data].reverse().map((e,ri)=>{
-      const idx=data.length-1-ri;
-      return`<tr>
-        <td style="white-space:nowrap;font-weight:500">${fmtDate(e.date)}</td>
-        <td style="color:var(--color-text-secondary)">${e.lab||'—'}</td>
-        ${allKeys.map(k=>{const v=e.values[k];if(v===undefined)return'<td style="color:var(--color-text-tertiary)">—</td>';
-          const s=st(k,v);return`<td style="color:${s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)'}">${fmtNum(v)}</td>`;}).join('')}
-        <td><button class="del-btn" onclick="delEntry(${idx})" title="Delete">✕</button></td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table></div>`;
+  let html='<div style="overflow-x:auto;"><table class="history-table"><thead><tr><th>Date</th><th>Lab</th>';
+  allKeys.forEach(k=>{
+    html+='<th>'+(ALL[k]?ALL[k].name:k)+'<br><span style="font-weight:400;color:var(--color-text-tertiary)">'+(ALL[k]?ALL[k].unit:'')+'</span></th>';
+  });
+  html+='<th></th></tr></thead><tbody>';
+  [...data].reverse().forEach((e,ri)=>{
+    const idx=data.length-1-ri;
+    const rowHasFlag=Object.entries(e.values).some(([k,v])=>{
+      const rng=e.ranges&&e.ranges[k]&&e.ranges[k].low!==undefined?e.ranges[k]:(ALL[k]&&ALL[k].low!==undefined?ALL[k]:null);
+      return rng&&stPt(k,v,rng)!=='ok';
+    });
+    html+='<tr style="'+(rowHasFlag?'background:rgba(229,57,53,0.04);':'')+'">';
+    html+='<td style="white-space:nowrap;font-weight:500;">'+(rowHasFlag?'<span style="color:#e53935;margin-right:4px;" title="Has out-of-range values">\u26a0</span>':'')+fmtDate(e.date)+'</td>';
+    html+='<td style="color:var(--color-text-secondary)">'+(e.lab||'—')+'</td>';
+    allKeys.forEach(k=>{
+      const v=e.values[k];
+      if(v===undefined){html+='<td style="color:var(--color-text-tertiary)">—</td>';return;}
+      const rng=e.ranges&&e.ranges[k]&&e.ranges[k].low!==undefined?e.ranges[k]:(ALL[k]&&ALL[k].low!==undefined?ALL[k]:null);
+      const s=rng?stPt(k,v,rng):'ok';
+      const hiLabel=rng&&rng.high>=9000?'&infin;':(rng?fmtLabel(rng.high):'?');
+      const title=rng?'Ref: '+fmtLabel(rng.low)+'\u2013'+hiLabel:'No reference range';
+      const bold=s!=='ok'?'font-weight:600;':'';
+      html+='<td style="color:'+(s==='hi'?'#e53935':s==='lo'?'#fb8c00':'var(--color-text)')+';'+bold+'" title="'+title+'">'+fmtNum(v)+(s==='hi'?' \u2191':s==='lo'?' \u2193':'')+'</td>';
+    });
+    html+='<td><button class="del-btn" onclick="delEntry('+idx+')" title="Delete">\u2715</button></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  c.innerHTML=html;
 }
 
 function showFields(panel){
@@ -586,7 +808,7 @@ function showFields(panel){
   c.innerHTML=`<div class="field-grid">${PANELS[panel].sub.map(m=>`
     <div class="field-item">
       <div class="field-label">${m.name}</div>
-      <div class="field-sub">${fmtLabel(m.low)} – ${m.high>=9000?'∞':fmtLabel(m.high)} ${m.unit}</div>
+      <div class="field-sub">${m.low!==undefined?(fmtLabel(m.low)+' \u2013 '+(m.high>=9000?'\u221e':fmtLabel(m.high))+' '+m.unit):'no ref range'}</div>
       <input type="number" step="any" id="f-${m.key}" placeholder="value"/>
     </div>`).join('')}</div>`;
 }
@@ -596,11 +818,16 @@ function saveEntry(){
   const lab=document.getElementById('entry-lab').value||'';
   const panel=document.getElementById('panel-sel').value;
   if(!date||!panel){alert('Select a date and panel.');return;}
-  const entry={date,lab,values:{}};let n=0;
+  const entry={date,lab,values:{},ranges:{}};let n=0;
   PANELS[panel].sub.forEach(m=>{const el=document.getElementById('f-'+m.key);
-    if(el&&el.value!==''&&!isNaN(parseFloat(el.value))){entry.values[m.key]=parseFloat(el.value);n++;}});
+    if(el&&el.value!==''&&!isNaN(parseFloat(el.value))){
+      entry.values[m.key]=parseFloat(el.value);
+      entry.ranges[m.key]={low:m.low,high:m.high}; // snapshot current range
+      n++;
+    }});
   if(!n){alert('Enter at least one value.');return;}
   data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
+  promoteEntryRanges(entry);
   const msg=document.getElementById('save-msg');
   msg.textContent='✓ Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
   setTimeout(()=>msg.style.display='none',3000);
@@ -640,31 +867,150 @@ function importData(e){
   reader.readAsText(file);
 }
 
-async function parsePaste(){
-  const text=document.getElementById('paste-in').value.trim();
-  if(!text){alert('Paste some lab values first.');return;}
-  const date=document.getElementById('entry-date').value||new Date().toISOString().split('T')[0];
-  const lab=document.getElementById('entry-lab').value||'';
-  const btn=event.target;btn.textContent='Parsing…';btn.disabled=true;
-  try{
-    const mList=Object.values(ALL).map(m=>`${m.name} → key:${m.key} (${m.unit})`).join('\n');
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,
-        messages:[{role:'user',content:`Extract blood values from this lab text and match to these markers:\n${mList}\n\nLab text:\n${text}\n\nReturn ONLY valid JSON: {"key":numericValue,...}. Keys must match exactly. Numbers only.`}]})});
-    const d=await resp.json();
-    const raw=d.content.filter(i=>i.type==='text').map(i=>i.text).join('');
-    const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
-    const entry={date,lab,values:{}};let n=0;
-    Object.entries(parsed).forEach(([k,v])=>{if(ALL[k]&&!isNaN(parseFloat(v))){entry.values[k]=parseFloat(v);n++;}});
-    if(!n){alert('No matching markers found. Try manual entry.');return;}
-    data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
-    const msg=document.getElementById('parse-msg');
-    msg.textContent='✓ Saved '+n+' values for '+fmtDate(date);msg.style.display='block';
-    setTimeout(()=>msg.style.display='none',4000);
-    document.getElementById('paste-in').value='';renderAll();
-  }catch(e){alert('AI parsing requires an internet connection and API access. Try manual entry instead.');}
-  finally{btn.textContent='Parse with AI ↗';btn.disabled=false;}
+// ── Reference Ranges editor ──────────────────────────────────────
+function renderReferences(){
+  const c=document.getElementById('ref-container');
+  try{ _renderReferencesInner(c); }
+  catch(e){ c.innerHTML='<div style="padding:20px;color:#e53935;">Error: '+e.message+'</div>'; console.error(e); }
 }
+function _renderReferencesInner(c){
+  const th='text-align:left;padding:6px 10px;background:var(--color-bg-secondary);border-bottom:1px solid var(--color-border);color:var(--color-text-secondary);font-weight:600;font-size:11px;white-space:nowrap;';
+  const td='padding:6px 10px;border-bottom:1px solid var(--color-border);font-size:12px;';
+  let html='';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">';
+  html+='<div><div style="font-size:15px;font-weight:600;">Reference Ranges</div>';
+  html+='<div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px;">Edit any value and click <strong>Save changes</strong>. Edited ranges are marked <span style="color:#7F77DD;font-weight:600;">Manually entered</span>. Ranges auto-update from your most recent lab result when available.</div></div>';
+  html+='<button class="btn btn-p" onclick="saveAllRanges()">Save changes</button>';
+  html+='</div>';
+  html+='<div style="background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--color-text-secondary);line-height:1.7;">';
+  html+='<strong style="color:var(--color-text);">About the NBME defaults</strong><br>';
+  html+='Default reference ranges come directly from the <strong>NBME Laboratory Reference Values</strong> (National Board of Medical Examiners), the standard reference table used in US medical licensing exams and widely cited in clinical practice. ';
+  html+='These ranges apply to <strong>adult males</strong> where sex-specific values are given (e.g. hemoglobin, hematocrit, RBC, ferritin, iron). They are general population values and do not account for age, pregnancy, or individual lab methodology \u2014 your specific lab report may show slightly different ranges based on the instruments and population they calibrate to. ';
+  html+='The tracker automatically adopts ranges from your uploaded results and lets you manually override any value.';
+  html+='</div>';
+  html+='<div id="ref-save-msg" style="font-size:13px;display:none;margin-bottom:12px;"></div>';
+  const sourceColors={lab_result:'#1a7a3a',manual:'#7F77DD',nbme_default:'#888'};
+  const sourceLabels={lab_result:'From lab result',manual:'Manually entered',nbme_default:'NBME default'};
+  Object.entries(PANELS).forEach(function(pe){
+    var pk=pe[0], p=pe[1];
+    html+='<div class="cat-section">';
+    html+='<div class="cat-title"><div class="cat-dot" style="background:'+p.color+'"></div>'+p.label+'</div>';
+    html+='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;">';
+    html+='<thead><tr>';
+    html+='<th style="'+th+'width:32%">Marker</th>';
+    html+='<th style="'+th+'width:10%">Unit</th>';
+    html+='<th style="'+th+'width:12%">Low</th>';
+    html+='<th style="'+th+'width:12%">High</th>';
+    html+='<th style="'+th+'">Source</th>';
+    html+='<th style="'+th+'width:4%"></th>';
+    html+='</tr></thead><tbody>';
+    p.sub.forEach(function(m){
+      var ar=activeRanges[m.key];
+      // If marker has no NBME default and no active range, show as no-range
+      var hasDefault=m.low!==undefined&&m.high!==undefined;
+      var src=ar?ar.source:(hasDefault?'nbme_default':'none');
+      var srcLabel=ar?ar.sourceLabel:'';
+      var isManual=src==='manual';
+      var isResult=src==='lab_result';
+      var isNone=src==='none';
+      var rowBg=isManual?'background:var(--color-warning-bg);':isResult?'background:rgba(26,122,58,0.04);':'';
+      var curLow=ar?ar.low:(hasDefault?m.low:'');
+      var curHigh=ar?(ar.high>=9000?'':ar.high):(hasDefault&&m.high<9000?m.high:'');
+      var hiPh=(!ar&&m.high>=9000)||( ar&&ar.high>=9000)?'\u221e':'';
+      var col=isNone?'#bbb':(sourceColors[src]||'#888');
+      var lbl=isNone?'No default \u2014 set from lab result':(sourceLabels[src]||src);
+      var resetBtn=(!isNone&&src!=='nbme_default')?'<button class="del-btn" onclick="resetOneRange(\''+m.key+'\')" title="Reset to NBME default">\u21ba</button>':'';
+      var dot=(src!=='nbme_default'&&!isNone)?' <span style="font-size:9px;color:'+col+';font-weight:700;">&#9679;</span>':'';
+      html+='<tr style="'+rowBg+'">';
+      html+='<td style="'+td+'font-weight:500;">'+m.name+dot+'</td>';
+      html+='<td style="'+td+'color:var(--color-text-tertiary);">'+(m.unit||'\u2014')+'</td>';
+      html+='<td style="'+td+'"><input type="number" step="any" id="rlo-'+m.key+'" value="'+curLow+'" placeholder="'+(isNone?'—':'low')+'" oninput="markRangeEdited(\''+m.key+'\')" style="width:72px;height:28px;font-size:12px;padding:0 6px;'+(isNone?'color:var(--color-text-tertiary);':'')+'"/></td>';
+      html+='<td style="'+td+'"><input type="number" step="any" id="rhi-'+m.key+'" value="'+curHigh+'" placeholder="'+(isNone?'—':hiPh||'high')+'" oninput="markRangeEdited(\''+m.key+'\')" style="width:72px;height:28px;font-size:12px;padding:0 6px;'+(isNone?'color:var(--color-text-tertiary);':'')+'"/></td>';
+      html+='<td id="src-'+m.key+'" style="'+td+'font-size:11px;white-space:nowrap;"><span style="color:'+col+';font-weight:600;">'+lbl+'</span>';
+      if(srcLabel) html+='<br><span style="color:#999;font-size:10px;">'+srcLabel+'</span>';
+      html+='</td>';
+      html+='<td style="'+td+'text-align:center;">'+resetBtn+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  });
+  html+='<div style="margin-top:8px;font-size:11px;color:var(--color-text-tertiary);">';
+  html+='<span style="color:#1a7a3a;font-weight:600;">&#9679; From lab result</span> = updated from your most recent result &nbsp;&middot;&nbsp;';
+  html+='<span style="color:#7F77DD;font-weight:600;">&#9679; Manually entered</span> = you set this &nbsp;&middot;&nbsp;';
+  html+='NBME default = from NBME Laboratory Reference Values (adult male) &nbsp;&middot;&nbsp;';
+  html+='<span style="color:#bbb;">No default</span> = not in NBME document; populate from your lab report or enter manually.';
+  html+='</div>';
+  c.innerHTML=html;
+}
+
+
+// Track which keys the user has touched in this editing session
+const _pendingManual = new Set();
+function markRangeEdited(key){
+  _pendingManual.add(key);
+  // Update the source cell live so it shows "Manually entered" immediately
+  const srcCell = document.getElementById('src-'+key);
+  if(srcCell){
+    srcCell.innerHTML='<span style="color:#7F77DD;font-weight:600;">Manually entered</span><br><span style="color:#999;font-size:10px;">unsaved</span>';
+  }
+}
+
+function saveAllRanges(){
+  let changed=0;
+  const today=new Date().toISOString().split('T')[0];
+  Object.values(PANELS).forEach(p=>p.sub.forEach(m=>{
+    const loEl=document.getElementById('rlo-'+m.key);
+    const hiEl=document.getElementById('rhi-'+m.key);
+    if(!loEl||!hiEl)return;
+    const lo=parseFloat(loEl.value);
+    const hi=hiEl.value===''?9999:parseFloat(hiEl.value);
+    if(isNaN(lo)||isNaN(hi))return;
+    if(_pendingManual.has(m.key)){
+      // User touched this input — always mark as manually entered
+      activeRanges[m.key]={low:lo,high:hi,source:'manual',sourceLabel:'Manually entered \u00b7 '+today};
+      changed++;
+    }
+  }));
+  _pendingManual.clear();
+  persistRanges();applyActiveRanges();
+  const msg=document.getElementById('ref-save-msg');
+  if(changed>0){
+    msg.textContent='\u2713 Saved '+changed+' manually entered range'+(changed>1?'s':'');
+    msg.style.color='var(--color-success-text)';
+  } else {
+    msg.textContent='No changes detected — values match current ranges.';
+    msg.style.color='var(--color-text-secondary)';
+  }
+  msg.style.display='block';
+  setTimeout(()=>{msg.style.display='none';renderReferences();},2500);
+  renderAll();
+}
+
+function resetOneRange(key){
+  delete activeRanges[key];
+  // Restore NBME default if one exists
+  if(NBME_DEFAULTS[key]&&NBME_DEFAULTS[key].low!==undefined){
+    const qd=NBME_DEFAULTS[key];
+    if(ALL[key]){ALL[key].low=qd.low;ALL[key].high=qd.high;}
+    Object.values(PANELS).forEach(p=>p.sub.forEach(m=>{if(m.key===key){m.low=qd.low;m.high=qd.high;}}));
+  } else {
+    // No NBME default — clear range from PANELS too
+    if(ALL[key]){delete ALL[key].low;delete ALL[key].high;}
+    Object.values(PANELS).forEach(p=>p.sub.forEach(m=>{if(m.key===key){delete m.low;delete m.high;}}));
+  }
+  persistRanges();
+  renderReferences();renderAll();
+}
+
+function resetAllRanges(){
+  if(!confirm('Reset all reference ranges to NBME published defaults?'))return;
+  activeRanges={};
+  persistRanges();
+  location.reload();
+}
+
+// QUEST_DEFAULTS captured at startup in captureQuestDefaults()
+
 
 function renderAll(){
   renderOverview();
@@ -673,6 +1019,7 @@ function renderAll(){
 }
 
 document.getElementById('entry-date').value=new Date().toISOString().split('T')[0];
+captureQuestDefaults();
 load();
 </script>
 </body>

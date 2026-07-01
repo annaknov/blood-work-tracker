@@ -1,23 +1,20 @@
 # Blood Work Tracker — Setup Guide
 
-A self-contained HTML file for tracking lab results over time. No account required, no data ever leaves your device. This guide covers two ways to use the tracker with AI assistance, plus important guidance on protecting your health data before you start.
+A self-contained HTML file for tracking lab results over time. No account required, no data ever leaves your device.
 
 ---
-
 
 ## How the tracker works
 
-Download `blood_work_tracker.html` and open it in any modern browser (Chrome, Firefox, Safari, Edge). Your data is saved in your browser's local storage — it persists between sessions on the same machine and browser. Nothing is sent to any server except when you use the AI parse feature.
+Download `blood_work_tracker.html` and open it in any modern browser (Chrome, Firefox, Safari, Edge). Your data is saved in your browser's local storage — it persists between sessions on the same machine and browser. Nothing is ever sent to any server.
 
-You can always add results manually: go to **+ Add**, pick a panel (CBC, Metabolic, Lipids, etc.), enter values, and click **Save entry**.
-
-The AI-assisted options below save time when you have a lot of values to enter.
+The tracker covers CBC, Metabolic, Lipids, Hormones, Thyroid, and Vitamins & minerals panels. Out-of-range values are flagged on the Overview tab based on the reference ranges from your most recent lab test.
 
 ---
 
-## Option A — Use Claude.ai directly (recommended, no setup required)
+## Option A — Let Claude fill it in (recommended, no setup required)
 
-This is the easiest way to get started. You upload the tracker file into Claude, and Claude handles reading your results and populating the tracker — no API key or code editing needed.
+This is the easiest way to get started. You upload the tracker file and your lab report into Claude, and Claude reads your results and populates the tracker for you.
 
 ### Step 1 — Download the tracker
 
@@ -27,103 +24,53 @@ Save `blood_work_tracker.html` to your computer.
 
 Go to [claude.ai](https://claude.ai) and sign in or create a free account.
 
-### Step 3 — Upload the tracker into a conversation
+### Step 3 — Upload the tracker and your lab results
 
-Start a new conversation. Click the **paperclip / attachment icon** in the message box and select `blood_work_tracker.html`. Then send a message like:
+Start a new conversation. Click the **paperclip / attachment icon** and attach both:
+- `blood_work_tracker.html`
+- Your lab report (screenshot, PDF, or copied text)
 
-> "Please view this file and open the tracker so I can use it."
+Then send a message like:
 
-Claude will read the file and render an interactive version of the tracker directly in the conversation that you can open and use.
+> "Please fill in this blood work tracker with the values from my lab report and return the updated file."
 
-### Step 4 — Share your lab results with Claude
+Claude will read your results, match them to the correct markers, extract the reference ranges from your report, and return a populated version of the tracker. Download the file it returns and open it in your browser.
 
-You can share your results in two ways:
+### Step 4 — Adding future results
 
-**Paste as text.** Copy the values section from your lab portal (after removing any identifying information — see the privacy section above). Paste the text into the chat and ask:
+Each time you get new labs, repeat the process — upload the current tracker file alongside your new results and ask Claude to add the new entry. Your history and trends will build up over time.
 
-> "Here are my CBC results from June 2026. Can you add these to the tracker?"
+### Step 5 — Back up your data
 
-**Share a screenshot.** Take a screenshot of your results table, crop out any identifying header information, and attach it to the chat. Then ask:
-
-> "Here's a screenshot of my lab results. Please populate the tracker with these values."
-
-Claude will read the values, match them to the correct markers, and add them to the tracker automatically.
-
-### Step 5 — Export your data for next time
-
-Once your results are in the tracker, click **Export JSON** under **+ Add → Export / import data** to save a backup file. Next time you open the tracker in Claude, you can import this file to restore your previous entries and see trends over time.
+Once results are in the tracker, click **Export JSON** under **+ Add → Export / import data** to save a backup file. You can import this file to restore your data at any time.
 
 ---
 
-## Option B — Local use with your own Anthropic API key
+## Option B — Enter values manually
 
-This option lets the tracker's built-in "Parse with AI" button work without going through Claude.ai. Everything runs locally in your browser. You pay for API usage directly (under $0.01 per parse).
+If you prefer to enter values yourself, the tracker has a built-in form for every panel.
 
-### Step 1 — Get an Anthropic API key
+### Step 1 — Open the tracker
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) and create an account
-2. Navigate to **API Keys** in the left sidebar
-3. Click **Create Key**, give it a name (e.g. "Blood Work Tracker"), and copy the key — it starts with `sk-ant-`
-4. Add a payment method under **Billing** (you only pay for what you use — there is no subscription)
+Open `blood_work_tracker.html` in your browser.
 
-### Step 2 — Add your key to the HTML file
+### Step 2 — Go to the + Add tab
 
-Open `blood_work_tracker.html` in a text editor (TextEdit on Mac, Notepad on Windows, or any code editor like VS Code).
+Select the **test date** and optionally the **lab name** (e.g. Quest, Labcorp). Then choose a **panel** from the dropdown — CBC, Metabolic, Lipids, etc.
 
-Search for the `parsePaste` function — look for this block:
+Input fields will appear for every marker in that panel. Enter the values from your lab report and click **Save entry**. Repeat for each panel you have results for.
 
-```js
-const resp = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-```
+### Step 3 — Set reference ranges (optional)
 
-Replace it with:
+The tracker comes pre-loaded with reference ranges from the **NBME Laboratory Reference Values** (the standard reference table used in US medical licensing exams). These apply to adult males where sex-specific values are given.
 
-```js
-const resp = await fetch('https://api.anthropic.com/v1/messages', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-api-key': 'YOUR_API_KEY_HERE',
-    'anthropic-version': '2023-06-01',
-  },
-```
+If your lab report uses different ranges, you can update them in the **⚙ Ranges** tab:
 
-Swap `YOUR_API_KEY_HERE` for your actual key (keep the quotes around it). Save the file.
+1. Find the marker you want to update
+2. Edit the **Low** and **High** values directly in the table
+3. Click **Save changes**
 
-### Step 3 — Use the Parse with AI feature
-
-1. Open the saved HTML file in your browser
-2. Go to **+ Add**
-3. Set the **Test date** and optionally the **Lab / source** name
-4. Paste your lab values (plain text, identifiers removed) into the text area at the bottom
-5. Click **Parse with AI ↗**
-6. Your results will be saved within a few seconds and appear in the Overview
-
-### API costs
-
-Each parse call sends your pasted text plus a list of marker names to the Anthropic API and receives a short JSON response. Using `claude-sonnet-4-6`:
-
-| | Rate | Typical per parse |
-|---|---|---|
-| Input tokens | $3.00 / 1M tokens | ~$0.005 |
-| Output tokens | $15.00 / 1M tokens | ~$0.003 |
-| **Total per parse** | | **~$0.008** |
-
-A full panel (CBC + metabolic + lipids + thyroid) in a single paste is still one call — under one cent. Running labs monthly for a year costs roughly **10–15 cents total**. You can monitor usage and set spending limits at [console.anthropic.com/settings/limits](https://console.anthropic.com/settings/limits).
-
-### Security note for your API key
-
-Your API key is stored in plaintext inside the HTML file. This is fine for personal local use — the file stays on your machine. However:
-
-- **Do not share this file** with your key inside it
-- **Do not upload it** to GitHub, Google Drive, Dropbox, or any shared location
-- **Do not host it** as a public webpage
-
-If you want to share the template with others, share the original file without the key (or remove the key line before sharing).
+The source column shows where each range came from — NBME default, your most recent lab result, or manually entered. Once you update a range manually, it won't be overwritten by future lab results. Use the **↺** button next to any row to restore it to the NBME default.
 
 ---
 
@@ -141,4 +88,4 @@ Use the **Export JSON** button under **+ Add → Export / import data** after ea
 
 ## Sharing the template with others
 
-Share the original `blood_work_tracker.html` file without any API key added. Each recipient opens it in their browser, starts with a blank tracker, and chooses whichever option works for them. Their data is completely separate and private to their own browser.
+Share the original `blood_work_tracker.html` file as downloaded. Each recipient opens it in their browser, starts with a blank tracker, and their data is completely separate and private to their own browser.
