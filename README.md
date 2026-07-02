@@ -12,9 +12,9 @@ The tracker covers CBC, Metabolic, Lipids, Hormones, Thyroid, and Vitamins & min
 
 ---
 
-## Option A — Let Claude fill it in (recommended)
+## Option A — Let Claude populate the tracker directly (recommended)
 
-The easiest way to get started. Upload the tracker and your lab report into Claude and it will populate everything for you — no typing required.
+The easiest way to get started. Upload the tracker file and your lab report into Claude and it will populate everything for you — no typing required.
 
 ### Step 1 — Download the tracker
 
@@ -46,7 +46,42 @@ Once results are in the tracker, click **Export JSON** under **+ Add → Export 
 
 ---
 
-## Option B — Enter values manually
+## Option B — Ask Claude to generate a JSON file, then import it
+
+If you prefer not to upload the tracker file each time, you can ask Claude to generate a JSON file from your lab results and import that directly into the tracker. This is useful if you have multiple reports to process at once, or if you want to keep the tracker file separate from your conversations with Claude.
+
+### Step 1 — Share your lab results with Claude
+
+Go to [claude.ai](https://claude.ai) and start a new conversation. Attach your lab report (screenshot, PDF, or copied text) and send a message like:
+
+> "Please extract all values from this lab report and return them as a JSON file I can import into my blood work tracker. Use this format:
+>
+> ```json
+> [
+>   {
+>     "date": "YYYY-MM-DD",
+>     "lab": "Lab name",
+>     "values": { "marker_key": numeric_value },
+>     "ranges": { "marker_key": { "low": number, "high": number } }
+>   }
+> ]
+> ```
+>
+> Use the marker keys from this list: wbc, rbc, hgb, hct, mcv, mch, mchc, rdw, plt, neut_abs, lymph_abs, mono_abs, eos_abs, baso_abs, neutrophils, lymphocytes, monocytes, eosinophils, basophils, glucose, bun, creatinine, egfr, anion_gap, sodium, potassium, chloride, co2, calcium, protein, albumin, globulin, ag_ratio, bilirubin, alp, ast, alt, hba1c, crp, total_chol, ldl, hdl, trig, non_hdl, vldl, tsh, free_t4, free_t3, total_t4, total_t3, t3_uptake, testosterone, free_test, shbg, dhea_s, estradiol, cortisol, lh, fsh, prolactin, vit_d, vit_b12, folate, ferritin, iron, tibc, iron_sat, magnesium, homocysteine, uric_acid, zinc"
+
+Claude will return a `.json` file with your results formatted and ready to import.
+
+### Step 2 — Import the JSON file into the tracker
+
+Open `blood_work_tracker.html` in your browser. Go to **+ Add → Import JSON**, select the file Claude returned, and your results will be loaded into the tracker immediately.
+
+### Adding multiple reports at once
+
+You can share several lab reports in one conversation and ask Claude to combine them into a single JSON file with one entry per visit. This is the fastest way to populate historical data.
+
+---
+
+## Option C — Enter values manually
 
 If you prefer to enter values yourself, the tracker has a built-in form for every panel.
 
@@ -60,17 +95,19 @@ Select the **test date** and optionally the **lab name** (e.g. Quest, Labcorp). 
 
 Input fields will appear for every marker in that panel, with the reference range shown beneath each one. Enter the values from your lab report and click **Save entry**. Repeat for each panel you have results for.
 
-### Step 3 — Update reference ranges (optional)
+You can also enter a **custom marker** not in the standard panels by selecting **Custom marker** from the panel dropdown. Enter the name, value, unit, and reference range.
 
-The tracker comes pre-loaded with reference ranges from the **NBME Laboratory Reference Values** — the standard reference table used in US medical licensing exams — for markers where a published range exists. These apply to adult males where sex-specific values are given.
+### Step 3 — Edit values
 
-If your lab report uses different ranges, you can update them in the **⚙ Ranges** tab:
+You can edit any value at any time:
+- **History tab** — click directly on any value in the table to edit it inline. Press Enter to save, Escape to cancel.
+- **Overview / panel cards** — click the ✎ pencil icon on any card to edit the latest value for that marker.
 
-1. Find the marker you want to update
-2. Edit the **Low** and **High** values directly in the table
-3. Click **Save changes**
+### Step 4 — Update reference ranges (optional)
 
-The Source column shows where each range came from — NBME default, your most recent lab result, or manually entered. Once you set a range manually it won't be overwritten by future results. Use the **↺** button on any row to restore it to the NBME default.
+The tracker comes pre-loaded with reference ranges from the **NBME Laboratory Reference Values** for markers where a published range exists. These apply to adult males where sex-specific values are given.
+
+If your lab report uses different ranges, update them in the **⚙ Ranges** tab: find the marker, edit the Low and High values, and click **Save changes**. The Source column tracks where each range came from. Use the **↺** button on any row to restore the NBME default.
 
 ---
 
