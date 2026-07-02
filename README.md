@@ -1,22 +1,17 @@
-# 🩺 Blood Work Tracker
+# Blood Work Tracker
 
-**A self-contained HTML file for tracking lab results over time.**  
-No account required. No server. No data ever leaves your device.
-
-![HTML](https://img.shields.io/badge/HTML-single%20file-orange?style=flat-square)
-![Storage](https://img.shields.io/badge/storage-local%20only-green?style=flat-square)
-![Dependencies](https://img.shields.io/badge/dependencies-none-blue?style=flat-square)
+A self-contained HTML file for tracking lab results over time. No account required. No server. No data ever leaves your device.
 
 ---
 
 ## What it does
 
-- 📊 **Tracks results over time** across CBC, Metabolic, Lipids, Hormones, Thyroid, and Vitamins & minerals panels
-- 🚨 **Flags out-of-range values** based on reference ranges from your most recent lab test
-- 📈 **Shows trends** with a chart for every marker across visits
-- 🏥 **Supports multiple labs** — Quest, Labcorp, or any other source, each with their own reference ranges stored per entry
-- ✏️ **Inline editing** — click any value in the History tab to edit it directly
-- 📋 **Reference ranges** pre-loaded from the NBME Laboratory Reference Values, automatically updated from your lab reports
+- **Tracks results over time** across CBC, Metabolic, Lipids, Hormones, Thyroid, and Vitamins & minerals panels
+- **Flags out-of-range values** based on reference ranges from your most recent lab test
+- **Shows trends** with a chart for every marker across visits
+- **Supports multiple labs** — Quest, Labcorp, or any other source, each with their own reference ranges stored per entry
+- **Inline editing** — click any value in the History tab to edit it directly
+- **Reference ranges** pre-loaded from the NBME Laboratory Reference Values, automatically updated from your lab reports
 
 ---
 
