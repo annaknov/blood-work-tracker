@@ -138,6 +138,7 @@ textarea { height: auto; padding: 8px 10px; }
   <button class="tab" onclick="switchTab('thyroid')">Thyroid</button>
   <button class="tab" onclick="switchTab('vitamins')">Vitamins & minerals</button>
   <button class="tab" onclick="switchTab('history')">History</button>
+  <button class="tab" onclick="switchTab('custom')">Custom</button>
   <button class="tab" onclick="switchTab('add')">+ Add</button>
   <button class="tab" onclick="switchTab('references')">⚙ Ranges</button>
 </div>
@@ -150,6 +151,8 @@ textarea { height: auto; padding: 8px 10px; }
 <div id="panel-thyroid" class="panel"><div id="sec-thyroid"></div></div>
 <div id="panel-vitamins" class="panel"><div id="sec-vitamins"></div></div>
 <div id="panel-history" class="panel"><div id="hc"></div></div>
+
+<div id="panel-custom" class="panel"><div id="sec-custom"></div></div>
 
 <div id="panel-references" class="panel"><div id="ref-container"></div></div>
 
@@ -175,6 +178,7 @@ textarea { height: auto; padding: 8px 10px; }
           <option value="hormones">Hormones</option>
           <option value="thyroid">Thyroid</option>
           <option value="vitamins">Vitamins & minerals</option>
+          <option value="custom">— Custom marker —</option>
         </select>
       </div>
     </div>
@@ -503,6 +507,7 @@ function switchTab(n){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+n).classList.add('active');
   if(n==='references') renderReferences();
+  else if(n==='custom'){renderCustom();}
   else renderAll();
 }
 function fmtNum(v){return v<0.01?v.toFixed(3):v<1?v.toFixed(2):v<10?parseFloat(v.toFixed(2)):parseFloat(v.toFixed(1));}
@@ -838,6 +843,38 @@ function renderHistory(){
 function showFields(panel){
   const c=document.getElementById('fields-wrap');
   if(!panel){c.innerHTML='';return;}
+  if(panel==='custom'){
+    c.innerHTML=`<div style="max-width:480px;">
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px;">Enter a marker name, unit, and value. Use this for any test not in the standard panels.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="field-item">
+          <div class="field-label">Marker name <span style="color:#e53935;">*</span></div>
+          <input type="text" id="custom-name" placeholder="e.g. CRP, DHEA-S, HbA1c" style="width:100%;"/>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div class="field-item" style="flex:1;">
+            <div class="field-label">Value <span style="color:#e53935;">*</span></div>
+            <input type="number" step="any" id="custom-value" placeholder="numeric value" style="width:100%;"/>
+          </div>
+          <div class="field-item" style="flex:1;">
+            <div class="field-label">Unit</div>
+            <input type="text" id="custom-unit" placeholder="e.g. mg/dL, ng/mL" style="width:100%;"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div class="field-item" style="flex:1;">
+            <div class="field-label">Reference low</div>
+            <input type="number" step="any" id="custom-low" placeholder="optional"/>
+          </div>
+          <div class="field-item" style="flex:1;">
+            <div class="field-label">Reference high</div>
+            <input type="number" step="any" id="custom-high" placeholder="optional"/>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    return;
+  }
   c.innerHTML=`<div class="field-grid">${PANELS[panel].sub.map(m=>`
     <div class="field-item">
       <div class="field-label">${m.name}</div>
@@ -884,12 +921,34 @@ function saveEntry(){
 
   // New entry
   const entry={date,lab,values:{},ranges:{}};let n=0;
+  if(panel==='custom'){
+    const cname=(document.getElementById('custom-name').value||'').trim();
+    const cval=parseFloat(document.getElementById('custom-value').value);
+    const cunit=(document.getElementById('custom-unit').value||'').trim();
+    const clo=parseFloat(document.getElementById('custom-low').value);
+    const chi=parseFloat(document.getElementById('custom-high').value);
+    if(!cname){alert('Please enter a marker name.');return;}
+    if(isNaN(cval)){alert('Please enter a numeric value.');return;}
+    // Sanitize key: lowercase, replace spaces/special chars with underscore
+    const ckey='custom_'+cname.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+    // Register in ALL if not already there
+    if(!ALL[ckey]){
+      const newM={key:ckey,name:cname,unit:cunit,panel:'custom'};
+      if(!isNaN(clo))newM.low=clo;
+      if(!isNaN(chi))newM.high=chi;
+      ALL[ckey]=newM;
+    }
+    entry.values[ckey]=cval;
+    if(!isNaN(clo)&&!isNaN(chi)) entry.ranges[ckey]={low:clo,high:chi};
+    n=1;
+  } else {
   PANELS[panel].sub.forEach(m=>{const el=document.getElementById('f-'+m.key);
     if(el&&el.value!==''&&!isNaN(parseFloat(el.value))){
       entry.values[m.key]=parseFloat(el.value);
       entry.ranges[m.key]={low:m.low,high:m.high};
       n++;
     }});
+  }
   if(!n){alert('Enter at least one value.');return;}
   data.push(entry);data.sort((a,b)=>a.date.localeCompare(b.date));persist();
   promoteEntryRanges(entry);
@@ -904,6 +963,10 @@ function clearForm(){
   document.getElementById('entry-lab').value='';
   document.getElementById('panel-sel').value='';
   document.getElementById('fields-wrap').innerHTML='';
+  // Clear custom marker fields if present
+  ['custom-name','custom-value','custom-unit','custom-low','custom-high'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
   document.getElementById('form-title').textContent='Add lab results';
   document.getElementById('save-btn').textContent='Save entry';
   document.getElementById('cancel-edit-btn').style.display='none';
@@ -1167,9 +1230,30 @@ function saveCardEdit(editId, valDisplayId, key, dataIdx){
   renderAll();
 }
 
+function renderCustom(){
+  const c=document.getElementById('sec-custom');
+  c.innerHTML='';
+  // Collect all custom_* keys that appear in any entry
+  const customKeys=[...new Set(data.flatMap(e=>Object.keys(e.values).filter(k=>k.startsWith('custom_'))))];
+  if(!customKeys.length){
+    c.innerHTML='<div class="no-data">No custom markers yet.<br><span style="font-size:12px;">Use <strong>+ Add → — Custom marker —</strong> to enter a marker not in the standard panels.</span></div>';
+    return;
+  }
+  const g=document.createElement('div');g.className='marker-grid';g.id='mg-custom';
+  c.appendChild(g);
+  customKeys.forEach(k=>{
+    const pts=getPts(k);
+    if(!pts.length)return;
+    // Build a synthetic marker object from ALL or from the key name
+    const m=ALL[k]||{key:k,name:k.replace(/^custom_/,'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),unit:'',panel:'custom'};
+    makeCard(m,pts,'#8b5cf6','mg-custom');
+  });
+}
+
 function renderAll(){
   renderOverview();
   Object.keys(PANELS).forEach(pk=>renderSection(pk,'sec-'+pk));
+  renderCustom();
   renderHistory();
 }
 
